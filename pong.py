@@ -362,12 +362,12 @@ def settings_menu() -> None:
                 arrowsurface = pygame.Surface( (h, h) )
                 arrowsurface.fill(BLACK)
                 pygame.draw.polygon(arrowsurface, COLOUR,
-                        ( (0, h//2), (h//2 - h//10, 0), (h//2 - h//10, h) ) )
+                        ( (0, h//2), (h//2 - h//8, h//4), (h//2 - h//8, 3*h//4) ) )
                 pygame.draw.polygon(arrowsurface, COLOUR,
-                        ( (h, h//2), (h//2 + h//10, 0), (h//2 + h//10, h) ) )
+                        ( (h, h//2), (h//2 + h//8, h//4), (h//2 + h//8, 3*h//4) ) )
                 arrowsurface.convert()
                 screen.blit(arrowsurface, (SCREEN_SIZE[0]//2 - text.get_width()//2 - arrowsurface.get_width() - 2,
-                                           SCREEN_SIZE[1]//DIV + font.get_linesize() * 1.5 * i))
+                                           SCREEN_SIZE[1]//DIV + font.get_linesize() * 1.5 * i + h//8))
             if extradraw == 'value' or (type(extradraw) == list and 'value' in extradraw):
                 valuesurface = font.render( str(globals()[options[i]['var']]), False, COLOUR).convert_alpha()
                 screen.blit(valuesurface, (SCREEN_SIZE[0]//2 + text.get_width()//2 + 2,
