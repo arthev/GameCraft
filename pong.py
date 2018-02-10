@@ -7,6 +7,7 @@ MAX_FPS = 60
 PADDLE_SIZE = (16, 64)
 PADDLE_VEL = 10
 HORIZONTAL_BAR = (SCREEN_SIZE[0], PADDLE_SIZE[0])
+RECENT_HIT_RESET = 20
 
 BLACK     = colour_constants.DISPLAYBLACK 
 COLOUR    = colour_constants.APPLE2
@@ -35,37 +36,6 @@ class vector2:
         self.x = x
         self.y = y
 
-
-
-
-class Ball:
-    def __init__(self) -> None:
-        self.pos = vector2(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]//2)
-        self.vel = vector2(SCREEN_SIZE[0]/2,  SCREEN_SIZE[1]/2)
-        self.surface = pygame.Surface( (BALL_DIAMETER, BALL_DIAMETER) )
-        self.surface.set_colorkey(PUREBLACK)
-        pygame.draw.circle( self.surface, COLOUR, (BALL_DIAMETER//2, BALL_DIAMETER//2), BALL_DIAMETER//2)
-        self.surface = self.surface.convert_alpha()
-
-    def move(self, time_passed) -> None:
-        self.pos.x += self.vel.x * time_passed
-        self.pos.y += self.vel.y * time_passed
-        if self.pos.x < 0 or self.pos.x + BALL_DIAMETER > SCREEN_SIZE[0]:
-            self.vel.x *= -1
-            if self.pos.x < 0:
-                self.pos.x = 0
-            else:
-                self.pos.x = SCREEN_SIZE[0] - BALL_DIAMETER
-        if self.pos.y < 0 or self.pos.y + BALL_DIAMETER > SCREEN_SIZE[1]:
-            self.vel.y *= -1
-            if self.pos.y < 0:
-                self.pos.y = 0
-            else:
-                self.pos.y = SCREEN_SIZE[1] - BALL_DIAMETER
-
-    def draw(self) -> None:
-        screen.blit(self.surface, (self.pos.x, self.pos.y))
-
 class Paddle:
     def __init__(self, side, player, up_button=None, down_button=None) -> None:
         if side == "left":
@@ -76,6 +46,7 @@ class Paddle:
             raise ValueError("Illegal 'side' argument sent to Paddle.__init__:", side)
         if player and (up_button == None or up_button == None):
             raise ValueError("Illegal combination of player and buttons sent to Paddle.__init__. None buttons make no sense for player == True")
+        self.side = side
         self.player = player
         self.up_button = up_button
         self.down_button = down_button
@@ -85,6 +56,7 @@ class Paddle:
         self.surface = self.surface.convert()
 
     def move(self, time_passed) -> None:
+        #Accelerate
         if self.player:
             pressed_keys = pygame.key.get_pressed()
             if pressed_keys[self.up_button]:
@@ -97,13 +69,86 @@ class Paddle:
             #Handle AI
             print("No AI implemented yet.")
             pass
+        #Move
         self.pos.y += self.vel.y * time_passed
-
+        if self.pos.y < HORIZONTAL_BAR[1] or self.pos.y + PADDLE_SIZE[1] > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
+            self.vel.y *= -0.75
+            if self.pos.y < HORIZONTAL_BAR[1]:
+                self.pos.y = HORIZONTAL_BAR[1]
+            else:
+                self.pos.y = SCREEN_SIZE[1] - PADDLE_SIZE[1] - HORIZONTAL_BAR[1]
 
     def draw(self) -> None:
         screen.blit(self.surface, (self.pos.x, self.pos.y))
 
 
+
+class Ball:
+    def __init__(self) -> None:
+        self.pos = vector2(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]//2)
+        self.vel = vector2(SCREEN_SIZE[0]/2,  SCREEN_SIZE[1]/2)
+        self.surface = pygame.Surface( (BALL_DIAMETER, BALL_DIAMETER) )
+        self.surface.set_colorkey(PUREBLACK)
+        pygame.draw.circle( self.surface, COLOUR, (BALL_DIAMETER//2, BALL_DIAMETER//2), BALL_DIAMETER//2)
+        self.surface = self.surface.convert_alpha()
+        self.recent_hit = 0
+
+    def horizontal_bar_check_and_adjustment(self) -> None:
+        if self.pos.x < 0 or self.pos.x + BALL_DIAMETER > SCREEN_SIZE[0]:
+            self.vel.x *= -1
+            if self.pos.x < 0:
+                self.pos.x = 0
+            else:
+                self.pos.x = SCREEN_SIZE[0] - BALL_DIAMETER
+        if self.pos.y < HORIZONTAL_BAR[1] or self.pos.y + BALL_DIAMETER > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
+            self.vel.y *= -1
+            if self.pos.y < HORIZONTAL_BAR[1]:
+                self.pos.y = HORIZONTAL_BAR[1]
+            else:
+                self.pos.y = SCREEN_SIZE[1] - BALL_DIAMETER - HORIZONTAL_BAR[1]
+
+    def simple_collision_check(self, paddles) -> Paddle: #Can also return None!
+        left = paddles[0]
+        right = paddles[1]
+        if self.recent_hit > 0:
+            return None
+        if self.pos.x + BALL_DIAMETER < right.pos.x and self.pos.x > left.pos.x + PADDLE_SIZE[0]:
+            return None
+        #If we progress below here, a hit might happen... since the ball isn't *between* the paddles!
+        if self.pos.x + BALL_DIAMETER > right.pos.x:
+            #Ball might have hit the right paddle.
+            if self.pos.y > right.pos.y + PADDLE_SIZE[1]:
+                return None
+            elif self.pos.y + BALL_DIAMETER < right.pos.y:
+                return None
+            else:
+                return right
+        else:
+            #Ball might have hit the left paddle.
+            if self.pos.y > left.pos.y + PADDLE_SIZE[1]:
+                return None
+            elif self.pos.y + BALL_DIAMETER < left.pos.y:
+                return None
+            else:
+                return left
+
+    def collision_handling(self, paddle) -> None:
+        print("The ball collided with the", paddle.side, "paddle!")
+        self.vel.x *= -1.1
+        #TODO: Implement fun system calculating new velocities depending on where on the paddle the ball hit.
+
+    def move(self, time_passed, paddles) -> None:
+        self.pos.x += self.vel.x * time_passed
+        self.pos.y += self.vel.y * time_passed
+        if self.recent_hit > 0: self.recent_hit -= 1
+        self.horizontal_bar_check_and_adjustment()
+        quick_collision = self.simple_collision_check(paddles) #quick_collision will contain a paddle - or None.
+        if quick_collision: 
+            self.recent_hit = RECENT_HIT_RESET
+            self.collision_handling(quick_collision)
+
+    def draw(self) -> None:
+        screen.blit(self.surface, (self.pos.x, self.pos.y))
 
 
 
@@ -120,6 +165,7 @@ def play() -> None:
     ball = Ball()
     paddle1 = Paddle(side="left", player=True, up_button=pygame.K_q, down_button=pygame.K_a)
     paddle2 = Paddle(side="right", player=True, up_button=pygame.K_o, down_button=pygame.K_l)
+    paddles = [paddle1, paddle2] #Left side must go in paddles[0], right side in paddles[1].
 
     while True:
         for event in pygame.event.get():
@@ -133,28 +179,13 @@ def play() -> None:
 
         background.draw()
 
-        ball.move(time_passed)
-        paddle1.move(time_passed)
-        paddle2.move(time_passed)
+        ball.move(time_passed, paddles)
+        for paddle in paddles: paddle.move(time_passed)
 
 
         ball.draw()
-        paddle1.draw()
-        paddle2.draw()
+        for paddle in paddles: paddle.draw()
         pygame.display.update()
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     play()
