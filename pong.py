@@ -4,6 +4,8 @@ import colour_constants
 SCREEN_SIZE = (640, 480)
 BALL_DIAMETER = 32
 MAX_FPS = 60
+PADDLE_SIZE = (16, 64)
+PADDLE_VEL = 10
 
 BLACK     = colour_constants.DISPLAYBLACK 
 COLOUR    = colour_constants.APPLE2
@@ -24,7 +26,6 @@ class vector2:
 
 
 class Ball:
-    
     def __init__(self) -> None:
         self.pos = vector2(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]//2)
         self.vel = vector2(SCREEN_SIZE[0]/2,  SCREEN_SIZE[1]/2)
@@ -52,7 +53,48 @@ class Ball:
     def draw(self) -> None:
         screen.blit(self.surface, (self.pos.x, self.pos.y))
 
+class Paddle:
+    def __init__(self, side, player, up_button=None, down_button=None) -> None:
+        if side == "left":
+            self.pos = vector2(SCREEN_SIZE[0]//40, SCREEN_SIZE[1]//2 - PADDLE_SIZE[1]//2)
+        elif side == "right":
+            self.pos = vector2(SCREEN_SIZE[0] - PADDLE_SIZE[0] - SCREEN_SIZE[0]//40, SCREEN_SIZE[1]//2 - PADDLE_SIZE[1]//2)
+        else:
+            raise ValueError("Illegal 'side' argument sent to Paddle.__init__:", side)
+        if player and (up_button == None or up_button == None):
+            raise ValueError("Illegal combination of player and buttons sent to Paddle.__init__. None buttons make no sense for player == True")
+        self.player = player
+        self.up_button = up_button
+        self.down_button = down_button
+        self.vel = vector2(0, 0) #No initial movement.
+        self.surface = pygame.Surface( (PADDLE_SIZE[0], PADDLE_SIZE[1]) )
+        self.surface.fill(COLOUR)
+        self.surface = self.surface.convert()
 
+    def move(self, time_passed) -> None:
+        if self.player:
+            pressed_keys = pygame.key.get_pressed()
+            if pressed_keys[self.up_button]:
+                self.vel.y -= PADDLE_VEL
+            elif pressed_keys[self.down_button]:
+                self.vel.y += PADDLE_VEL
+            else:
+                self.vel.y -= self.vel.y / (MAX_FPS * 1.3) #Found experimentally
+        else:
+            #Handle AI
+            print("No AI implemented yet.")
+            pass
+        self.pos.y += self.vel.y * time_passed
+
+
+    def draw(self) -> None:
+        screen.blit(self.surface, (self.pos.x, self.pos.y))
+
+
+
+
+
+        
 
 
 
@@ -62,6 +104,8 @@ def play() -> None:
     clock = pygame.time.Clock()
 
     ball = Ball()
+    paddle1 = Paddle(side="left", player=True, up_button=pygame.K_q, down_button=pygame.K_a)
+    paddle2 = Paddle(side="right", player=True, up_button=pygame.K_o, down_button=pygame.K_l)
 
     while True:
         for event in pygame.event.get():
@@ -74,9 +118,15 @@ def play() -> None:
         time_passed = clock.tick(MAX_FPS) / 1000.0 #time_passed is in seconds
 
         draw_play_background()
-        ball.move(time_passed)
-        ball.draw()
 
+        ball.move(time_passed)
+        paddle1.move(time_passed)
+        paddle2.move(time_passed)
+
+
+        ball.draw()
+        paddle1.draw()
+        paddle2.draw()
         pygame.display.update()
 
 
