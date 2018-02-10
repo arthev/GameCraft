@@ -3,6 +3,7 @@ import random
 import colour_constants
 import time
 import json
+import math
 from pathlib import Path
 
 SCREEN_SIZE = (640, 480)
@@ -43,6 +44,21 @@ class vector2:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
+    def get_magnitude(self):
+        return math.sqrt(self.x**2 + self.y**2)
+    
+    def normalize(self):
+        magnitude = self.get_magnitude()
+        self.x /= magnitude
+        self.y /= magnitude
+
+    def __add__(self, rhs):
+        return vector2(self.x + rhs.x, self.y + rhs.y)
+    
+    def __mul__(self, scalar):
+        return vector2(self.x * scalar, self.y * scalar)
+
 
 class Paddle:
     def __init__(self, side, player, up_button=None, down_button=None):
@@ -148,9 +164,24 @@ class Ball:
                 return left
 
     def collision_handling(self, paddle) -> None:
-        print("The ball collided with the", paddle.side, "paddle!")
-        self.vel.x *= -1.05
-        #TODO: Implement fun system calculating new velocities depending on where on the paddle the ball hit.
+        steps = PADDLE_SIZE[1]//2 + BALL_DIAMETER//2
+        extreme = 1.12 #arcsin(0.9) = 1.12
+        hit = self.pos.y + BALL_DIAMETER//2 - (paddle.pos.y + PADDLE_SIZE[1]//2)
+        w = extreme/steps*hit
+        newVec = 0 #This is a unit vector, hehe.
+        if paddle.side == "left": newVec = vector2(-math.cos(w), -math.sin(w))
+        else: newVec = vector2(math.cos(w), -math.sin(w))
+        magnitude = self.vel.get_magnitude() * 1.05 * -1
+        self.vel.normalize()
+        newVec = newVec + self.vel #The two vectors can be scalar multiplied by some percentage for different admixtures.
+        newVec.normalize()
+        newVec = newVec * magnitude
+        self.vel = newVec
+
+
+
+
+
 
     def move(self, time_passed, paddles) -> None:
         self.pos.x += self.vel.x * time_passed
@@ -229,7 +260,6 @@ def play(win_score: int, two_player_mode: bool) -> str: #returns 'left' or 'righ
                 if paddles[1].score >= win_score:
                     display_winner(scorer)
                     return 
-            print(scorer, "has scored! Current score: Left -", paddles[0].score, " :: Right -", paddles[1].score)
             ball.reset()
 
         scoredrawer.draw(paddles[0].score, paddles[1].score)
@@ -334,7 +364,6 @@ def settings_menu() -> None:
                         globals()[var] = colour_options[colour_selection]
                     elif var == 'points_per_game':
                         globals()[var] += 1
-                        print(points_per_game, "is the new to-score!")
                 elif event.key == pygame.K_LEFT:
                     var = options[selection]['var']
                     if var == 'COLOUR':
@@ -344,7 +373,6 @@ def settings_menu() -> None:
                         globals()[var] = colour_options[colour_selection]
                     if var == 'points_per_game':
                         globals()[var] = max(1, points_per_game - 1)
-                        print(points_per_game, "is the new to-score!")
 
         screen.fill(BLACK)
         DIV = 32
