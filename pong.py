@@ -79,8 +79,32 @@ class Paddle:
         self.surface.fill(COLOUR)
         self.surface = self.surface.convert()
         self.score = 0
+        if not player: self.wait_to_calculate = 0
+        if not player: self.last_ball_dir = "left"
 
-    def move(self, time_passed) -> None:
+    def calculate_expected_pos(self, ball):
+        posVec = vector2(ball.pos.x + BALL_DIAMETER//2, ball.pos.y + BALL_DIAMETER//2)
+        velVec = vector2(ball.vel.x, ball.vel.y)
+        while True:
+            timer = 1/(MAX_FPS)
+            posVec.x += velVec.x * timer
+            posVec.y += velVec.y * timer
+            #Pseudo_horizontal_bar_check_and_adjustment
+            if posVec.y - BALL_DIAMETER//2 < HORIZONTAL_BAR[1]:
+                velVec.y *= -1
+                posVec.y = HORIZONTAL_BAR[1] + BALL_DIAMETER//2
+            elif posVec.y + BALL_DIAMETER//2 > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
+                velVec.y *= -1
+                posVec.y = SCREEN_SIZE[1] - BALL_DIAMETER//2 - HORIZONTAL_BAR[1]
+            #Now for the bounce from the left side, if any
+            if posVec.x - BALL_DIAMETER//2 < 0:
+                posVec.x = BALL_DIAMETER//2
+                velVec.x *= -1
+            #And finally, handling for when found the expected pos
+            if posVec.x + BALL_DIAMETER//2 > SCREEN_SIZE[0] - PADDLE_SIZE[0]//2:
+                return posVec
+            
+    def move(self, time_passed, ball) -> None:
         #Accelerate
         if self.player:
             pressed_keys = pygame.key.get_pressed()
@@ -91,9 +115,23 @@ class Paddle:
             else:
                 self.vel.y -= self.vel.y / (MAX_FPS * 1.3) #Found experimentally
         else:
-            #TODO: Handle AI
-            print("No AI implemented yet.")
-            pass
+            if ball.vel.x > 0:
+                self.last_ball_dir = "right"
+                if self.wait_to_calculate > 0: self.wait_to_calculate -= 1
+                else:
+                    self.expected_pos = self.calculate_expected_pos(ball)
+                    self.wait_to_calculate = RECENT_HIT_RESET//2
+            elif ball.vel.x < 0:
+                if self.last_ball_dir == "right":
+                    self.last_ball_dir = "left"
+                    self.expected_pos = self.calculate_expected_pos(ball)
+                    self.wait_to_calculate = 0
+            if self.expected_pos.y > self.pos.y + PADDLE_SIZE[1]//2:
+                self.vel.y += PADDLE_VEL
+            elif self.expected_pos.y < self.pos.y + PADDLE_SIZE[1]//2:
+                self.vel.y -= PADDLE_VEL
+            else:
+                self.vel.y -= self.vel.y / (MAX_FPS * 1.3)
         #Move
         self.pos.y += self.vel.y * time_passed
         if self.pos.y < HORIZONTAL_BAR[1] or self.pos.y + PADDLE_SIZE[1] > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
@@ -111,6 +149,8 @@ class Ball:
         self.recent_hit = 0
         self.pos = vector2(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]//2)
         self.vel = vector2(SCREEN_SIZE[0] * random.random(), SCREEN_SIZE[1] * random.random())
+        if random.random() < 0.5: self.vel.x *= -1
+        if random.random() < 0.5: self.vel.y *= -1
 
     def __init__(self):
         self.pos = None
@@ -178,11 +218,6 @@ class Ball:
         newVec = newVec * magnitude
         self.vel = newVec
 
-
-
-
-
-
     def move(self, time_passed, paddles) -> None:
         self.pos.x += self.vel.x * time_passed
         self.pos.y += self.vel.y * time_passed
@@ -246,7 +281,7 @@ def play(win_score: int, two_player_mode: bool) -> str: #returns 'left' or 'righ
         background.draw()
 
         ball.move(time_passed, paddles)
-        for paddle in paddles: paddle.move(time_passed)
+        for paddle in paddles: paddle.move(time_passed, ball)
         
         scorer = ball.score_check() #Either "left", "right" or None
         if scorer:
@@ -404,10 +439,6 @@ def settings_menu() -> None:
                 buttonsurface = font.render( pygame.key.name(globals()[options[i]['var']]), False, COLOUR).convert_alpha()
                 screen.blit(buttonsurface, (SCREEN_SIZE[0]//2 + text.get_width()//2 + 2,
                                            SCREEN_SIZE[1]//DIV + font.get_linesize() * 1.5 * i))
-
-
-
-
         pygame.display.update()
 
 def main_menu() -> None:
