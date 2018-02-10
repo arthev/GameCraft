@@ -1,6 +1,9 @@
 import pygame
-import colour_constants
 import random
+import colour_constants
+import time
+import json
+from pathlib import Path
 
 SCREEN_SIZE = (640, 480)
 BALL_DIAMETER = 32
@@ -9,13 +12,20 @@ PADDLE_SIZE = (16, 64)
 PADDLE_VEL = 10
 HORIZONTAL_BAR = (SCREEN_SIZE[0], PADDLE_SIZE[0])
 RECENT_HIT_RESET = 20
-
 BLACK     = colour_constants.DISPLAYBLACK 
-COLOUR    = colour_constants.APPLE2
 PUREBLACK = colour_constants.PUREBLACK #Easy access for colorkeying
+SETTINGS_PATH = "config_pong.cfg"
+
+COLOUR    = colour_constants.APPLE2
+player_one_up = pygame.K_q
+player_one_down = pygame.K_a
+player_two_up = pygame.K_o
+player_two_down = pygame.K_l
+points_per_game = 5
 
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
+font = pygame.font.SysFont("Mono", 32)
 
 class Play_Background:
     def __init__(self):
@@ -65,7 +75,7 @@ class Paddle:
             else:
                 self.vel.y -= self.vel.y / (MAX_FPS * 1.3) #Found experimentally
         else:
-            #Handle AI
+            #TODO: Handle AI
             print("No AI implemented yet.")
             pass
         #Move
@@ -79,8 +89,6 @@ class Paddle:
 
     def draw(self) -> None:
         screen.blit(self.surface, (self.pos.x, self.pos.y))
-
-
 
 class Ball:
     def reset(self) -> None:
@@ -157,32 +165,41 @@ class Ball:
     def draw(self) -> None:
         screen.blit(self.surface, (self.pos.x, self.pos.y))
 
-
-
-        
-
 class Scoredrawer:
     def __init__(self):
         self.left = 0
         self.right = 0
-        self.font = pygame.font.SysFont("Mono", 32)
 
     def draw(self, left, right): #Idea for improved performance: Check whether there's a change to a score and then only rendering if so.
-        left_text  = self.font.render(str(left),  True, COLOUR).convert_alpha()
-        right_text = self.font.render(str(right), True, COLOUR).convert_alpha()
+        left_text  = font.render(str(left),  False, COLOUR).convert_alpha()
+        right_text = font.render(str(right), False, COLOUR).convert_alpha()
         y_offset = HORIZONTAL_BAR[1] * 1.5
         screen.blit(left_text,  (SCREEN_SIZE[0]//2 - 32 - left_text.get_width(),  y_offset))
         screen.blit(right_text, (SCREEN_SIZE[0]//2 + 32, y_offset))
 
+def display_winner(winner) -> None:
+    winner_text = font.render( winner.capitalize() + " has won!", False, COLOUR).convert_alpha()
+    screen.blit(winner_text, (SCREEN_SIZE[0]//2 - winner_text.get_width()//2,
+                              SCREEN_SIZE[1]//2 - winner_text.get_height()//2))
+    pygame.display.update()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.constants.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    exit()
+                elif event.key == pygame.K_RETURN:
+                    return
 
-def play(win_score: int) -> str: #returns 'left' or 'right' depending on which player won
+def play(win_score: int, two_player_mode: bool) -> str: #returns 'left' or 'right' depending on which player won
     clock = pygame.time.Clock()
 
     background = Play_Background()
     scoredrawer = Scoredrawer()
     ball = Ball()
-    paddle1 = Paddle(side="left", player=True, up_button=pygame.K_q, down_button=pygame.K_a)
-    paddle2 = Paddle(side="right", player=True, up_button=pygame.K_o, down_button=pygame.K_l)
+    paddle1 = Paddle(side="left", player=True, up_button=player_one_up, down_button=player_one_down)
+    paddle2 = Paddle(side="right", player=two_player_mode, up_button=player_two_up, down_button=player_two_down)
     paddles = [paddle1, paddle2] #Left side must go in paddles[0], right side in paddles[1].
 
     while True:
@@ -205,11 +222,13 @@ def play(win_score: int) -> str: #returns 'left' or 'right' depending on which p
             if scorer == "left":
                 paddles[0].score += 1
                 if paddles[0].score >= win_score:
-                    return scorer
+                    display_winner(scorer)
+                    return
             else:
                 paddles[1].score += 1
                 if paddles[1].score >= win_score:
-                    return scorer
+                    display_winner(scorer)
+                    return 
             print(scorer, "has scored! Current score: Left -", paddles[0].score, " :: Right -", paddles[1].score)
             ball.reset()
 
@@ -218,6 +237,210 @@ def play(win_score: int) -> str: #returns 'left' or 'right' depending on which p
         for paddle in paddles: paddle.draw()
         pygame.display.update()
 
+def display_intro() -> None:
+    display_font = pygame.font.SysFont("mono", SCREEN_SIZE[0]//6)
+    display_text = display_font.render("PongyPong", False, COLOUR, BLACK).convert()
+    display_font2 = pygame.font.SysFont("mono", SCREEN_SIZE[0]//18)
+    display_text2 = display_font2.render("by: Arthur", False, COLOUR, BLACK).convert()
+    for i in range(256):
+        screen.fill(BLACK)
+        display_text.set_alpha(i)
+        screen.blit(display_text, (SCREEN_SIZE[0]//2 - display_text.get_width()//2,
+                                   SCREEN_SIZE[1]//2 - display_text.get_height()))
+
+        pygame.display.update()
+        time.sleep(1/100)
+    for i in range(256):
+        display_text2.set_alpha(i)
+        screen.blit(display_text2, (SCREEN_SIZE[0]//2,
+                                    SCREEN_SIZE[1]//2))
+        pygame.display.update()
+        time.sleep(1/200)
+    time.sleep(0.25)
+
+def settings_menu() -> None:
+    def save_settings(dummy):
+        current_settings = {'COLOUR':COLOUR,
+                            'player_one_up':player_one_up,
+                            'player_one_down':player_one_down,
+                            'player_two_up':player_two_up,
+                            'player_two_down':player_two_down,
+                            'points_per_game':points_per_game}
+        with open(SETTINGS_PATH, 'w') as settings_file:
+            json.dump(current_settings, settings_file)
+    
+    def set_key(var):
+        press_message = font.render( "Press the desired key...", False, COLOUR).convert_alpha()
+        screen.blit(press_message, (SCREEN_SIZE[0]//2 - press_message.get_width()//2,
+                                    SCREEN_SIZE[1] - font.get_linesize() * 1.5))
+        pygame.display.update()
+        pygame.event.clear()
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.constants.QUIT:
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        exit()
+                    if event.key != pygame.K_RETURN:
+                        globals()[var] = event.key
+                        return
+
+    selection = 0
+    options = [{'Text': 'Points Per Game: ', 'func': lambda x: None, 'var': 'points_per_game', 'extradraw': ['arrows', 'value']},
+               {'Text': 'Colour', 'func': lambda x: None, 'var': 'COLOUR', 'extradraw':'arrows'},
+               {'Text': 'Player One Up: ', 'func': set_key, 'var': 'player_one_up', 'extradraw':'button'},
+               {'Text': 'Player One Down: ', 'func': set_key, 'var': 'player_one_down', 'extradraw':'button'},
+               {'Text': 'Player Two Up: ', 'func': set_key, 'var': 'player_two_up', 'extradraw':'button'},
+               {'Text': 'Player Two Down: ', 'func': set_key, 'var':'player_two_down', 'extradraw':'button'},
+               {'Text': 'Save Settings', 'func': save_settings, 'var': 'return', 'extradraw': None}]
+
+    colour_options = [colour_constants.AMBER,
+                      colour_constants.LTAMBER,
+                      colour_constants.GREEN1,
+                      colour_constants.APPLE1,
+                      colour_constants.GREEN2,
+                      colour_constants.APPLE2,
+                      colour_constants.GREEN3]
+
+    colour_selection = 0
+    for i, colour in enumerate(colour_options):
+        if colour == COLOUR:
+            colour_selection = i
+
+    blinker = True
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.constants.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    exit()
+                elif event.key == pygame.K_RETURN:
+                    options[selection]['func'](options[selection]['var'])
+                    if options[selection]['var'] == 'return': return
+                elif event.key in [pygame.K_DOWN, player_one_down, player_two_down]:
+                    if selection == len(options) - 1: selection = 0
+                    else: selection += 1
+                elif event.key in [pygame.K_UP, player_one_up, player_two_up]:
+                    if selection == 0: selection = len(options) - 1
+                    else: selection -= 1
+                elif event.key == pygame.K_RIGHT:
+                    var = options[selection]['var']
+                    if var == 'COLOUR':
+                        if colour_selection == len(colour_options) -1: 
+                            colour_selection = 0
+                        else: colour_selection += 1
+                        globals()[var] = colour_options[colour_selection]
+                    elif var == 'points_per_game':
+                        globals()[var] += 1
+                        print(points_per_game, "is the new to-score!")
+                elif event.key == pygame.K_LEFT:
+                    var = options[selection]['var']
+                    if var == 'COLOUR':
+                        if colour_selection == 0:
+                            colour_selection = len(colour_options) - 1
+                        else: colour_selection -= 1
+                        globals()[var] = colour_options[colour_selection]
+                    if var == 'points_per_game':
+                        globals()[var] = max(1, points_per_game - 1)
+                        print(points_per_game, "is the new to-score!")
+
+        screen.fill(BLACK)
+        DIV = 32
+
+        for i in range(len(options)):
+            if i == selection:
+                blinker = not blinker
+                if blinker: continue
+            text = font.render(options[i]['Text'], False, COLOUR).convert_alpha()
+            screen.blit(text, (SCREEN_SIZE[0]//2 - text.get_width()//2,
+                               SCREEN_SIZE[1]//DIV + font.get_linesize() * 1.5 * i))
+            extradraw = options[i]['extradraw']
+            if extradraw == 'arrows' or (type(extradraw) == list and 'arrows' in extradraw):
+                h = text.get_height() * 0.75 // 1
+                arrowsurface = pygame.Surface( (h, h) )
+                arrowsurface.fill(BLACK)
+                pygame.draw.polygon(arrowsurface, COLOUR,
+                        ( (0, h//2), (h//2 - h//10, 0), (h//2 - h//10, h) ) )
+                pygame.draw.polygon(arrowsurface, COLOUR,
+                        ( (h, h//2), (h//2 + h//10, 0), (h//2 + h//10, h) ) )
+                arrowsurface.convert()
+                screen.blit(arrowsurface, (SCREEN_SIZE[0]//2 - text.get_width()//2 - arrowsurface.get_width() - 2,
+                                           SCREEN_SIZE[1]//DIV + font.get_linesize() * 1.5 * i))
+            if extradraw == 'value' or (type(extradraw) == list and 'value' in extradraw):
+                valuesurface = font.render( str(globals()[options[i]['var']]), False, COLOUR).convert_alpha()
+                screen.blit(valuesurface, (SCREEN_SIZE[0]//2 + text.get_width()//2 + 2,
+                                           SCREEN_SIZE[1]//DIV + font.get_linesize() * 1.5 * i))
+            if extradraw == 'button' or (type(extradraw) == list and 'button' in extradraw):
+                buttonsurface = font.render( pygame.key.name(globals()[options[i]['var']]), False, COLOUR).convert_alpha()
+                screen.blit(buttonsurface, (SCREEN_SIZE[0]//2 + text.get_width()//2 + 2,
+                                           SCREEN_SIZE[1]//DIV + font.get_linesize() * 1.5 * i))
+
+
+
+
+        pygame.display.update()
+
+def main_menu() -> None:
+    def one_player_mode():
+        play(points_per_game, False)
+    def two_player_mode():
+        play(points_per_game, True)
+
+    selection = 0
+    options = [{'Text': '1-Player', 'func': one_player_mode},
+               {'Text': '2-Player', 'func': two_player_mode},
+               {'Text': 'Settings', 'func': settings_menu},
+               {'Text': 'Exit', 'func': exit}]
+
+    blinker = True
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.constants.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    exit()
+                elif event.key == pygame.K_RETURN:
+                    options[selection]['func']()
+                elif event.key in [pygame.K_DOWN, player_one_down, player_two_down]:
+                    if selection == len(options) - 1: selection = 0
+                    else: selection += 1
+                elif event.key in [pygame.K_UP, player_one_up, player_two_up]:
+                    if selection == 0: selection = len(options) - 1
+                    else: selection -= 1
+
+        screen.fill(BLACK)
+
+        for i in range(len(options)):
+            if i == selection:
+                blinker = not blinker
+                if blinker: continue
+            text = font.render(options[i]['Text'], False, COLOUR).convert_alpha()
+            screen.blit(text, (SCREEN_SIZE[0]//2 - text.get_width()//2,
+                               SCREEN_SIZE[1]//4 + font.get_linesize() * 2 * i))
+
+        pygame.display.update()
+
+def load_settings() -> None:
+    settings_path = Path(SETTINGS_PATH)
+    if settings_path.is_file():
+        with open(SETTINGS_PATH, 'r') as settings_file:
+            settings = json.load(settings_file)
+            for item in settings:
+                globals()[item] = settings[item]
+    else:
+        default_settings = {'COLOUR':COLOUR,
+                'player_one_up':player_one_up,
+                'player_one_down':player_one_down,
+                'player_two_up':player_two_up,
+                'player_two_down':player_two_down,
+                'points_per_game':points_per_game}
+        with open(SETTINGS_PATH, 'w') as settings_file:
+            json.dump(default_settings, settings_file)
+
 if __name__ == '__main__':
-    winner = play(5)
-    print(winner, "won!")
+    load_settings()
+    #display_intro()
+    main_menu()
