@@ -6,6 +6,7 @@ BALL_DIAMETER = 32
 MAX_FPS = 60
 PADDLE_SIZE = (16, 64)
 PADDLE_VEL = 10
+HORIZONTAL_BAR = (SCREEN_SIZE[0], PADDLE_SIZE[0])
 
 BLACK     = colour_constants.DISPLAYBLACK 
 COLOUR    = colour_constants.APPLE2
@@ -16,6 +17,18 @@ screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
 
 def draw_play_background() -> None:
     screen.fill(BLACK) 
+
+class Play_Background:
+    def __init__(self) ->None:
+        self.surface = pygame.Surface(SCREEN_SIZE)
+        self.surface.fill(BLACK)
+        self.surface = self.surface.convert()
+        pygame.draw.rect(self.surface, COLOUR, (0, 0, HORIZONTAL_BAR[0], HORIZONTAL_BAR[1]))
+        pygame.draw.rect(self.surface, COLOUR, (0, SCREEN_SIZE[1] - HORIZONTAL_BAR[1], HORIZONTAL_BAR[0], HORIZONTAL_BAR[1]))
+        pygame.draw.line(self.surface, COLOUR, (SCREEN_SIZE[0]//2, 0), (SCREEN_SIZE[0]//2, SCREEN_SIZE[1]))
+
+    def draw(self) -> None:
+        screen.blit( self.surface, (0, 0) )
 
 class vector2:
     def __init__(self, x, y):
@@ -103,6 +116,7 @@ class Paddle:
 def play() -> None:
     clock = pygame.time.Clock()
 
+    background = Play_Background()
     ball = Ball()
     paddle1 = Paddle(side="left", player=True, up_button=pygame.K_q, down_button=pygame.K_a)
     paddle2 = Paddle(side="right", player=True, up_button=pygame.K_o, down_button=pygame.K_l)
@@ -117,7 +131,7 @@ def play() -> None:
 
         time_passed = clock.tick(MAX_FPS) / 1000.0 #time_passed is in seconds
 
-        draw_play_background()
+        background.draw()
 
         ball.move(time_passed)
         paddle1.move(time_passed)
