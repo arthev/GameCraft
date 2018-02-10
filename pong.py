@@ -175,7 +175,7 @@ class Scoredrawer:
         screen.blit(right_text, (SCREEN_SIZE[0]//2 + 32, y_offset))
 
 
-def play() -> None:
+def play(win_score: int) -> str: #returns 'left' or 'right' depending on which player won
     clock = pygame.time.Clock()
 
     background = Play_Background()
@@ -204,8 +204,12 @@ def play() -> None:
         if scorer:
             if scorer == "left":
                 paddles[0].score += 1
+                if paddles[0].score >= win_score:
+                    return scorer
             else:
                 paddles[1].score += 1
+                if paddles[1].score >= win_score:
+                    return scorer
             print(scorer, "has scored! Current score: Left -", paddles[0].score, " :: Right -", paddles[1].score)
             ball.reset()
 
@@ -215,4 +219,5 @@ def play() -> None:
         pygame.display.update()
 
 if __name__ == '__main__':
-    play()
+    winner = play(5)
+    print(winner, "won!")
