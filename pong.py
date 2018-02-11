@@ -16,6 +16,7 @@ RECENT_HIT_RESET = 20
 BLACK     = colour_constants.DISPLAYBLACK 
 PUREBLACK = colour_constants.PUREBLACK #Easy access for colorkeying
 SETTINGS_PATH = "config_pong.cfg"
+GAME_INTENSIFYING_CONSTANT = 1.08
 
 COLOUR    = colour_constants.APPLE2
 player_one_up = pygame.K_q
@@ -81,6 +82,7 @@ class Paddle:
         self.score = 0
         if not player: self.wait_to_calculate = 0
         if not player: self.last_ball_dir = "left"
+        if not player: self.expected_pos = 0
 
     def calculate_expected_pos(self, ball):
         posVec = vector2(ball.pos.x + BALL_DIAMETER//2, ball.pos.y + BALL_DIAMETER//2)
@@ -103,7 +105,26 @@ class Paddle:
             #And finally, handling for when found the expected pos
             if posVec.x + BALL_DIAMETER//2 > SCREEN_SIZE[0] - PADDLE_SIZE[0]//2:
                 return posVec
-            
+    def calculate_expected_drift(self, case):
+        yVel = self.vel.y
+        yPos = self.pos.y
+        while yVel > 1:
+            yVel -= yVel / (MAX_FPS * 1.3)
+            #movesim
+            yPos += yVel * 1/MAX_FPS
+            if yPos < HORIZONTAL_BAR[1]:
+                yVel *= -0.75
+                yPos = HORIZONTAL_BAR[1]
+            elif yPos + PADDLE_SIZE[1] > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
+                yVel *= -0.75
+                yPos = SCREEN_SIZE[1] - PADDLE_SIZE[1] - HORIZONTAL_BAR[1]
+        if yPos - PADDLE_SIZE[1]//8 - self.expected_pos.y > PADDLE_SIZE[1]//4:
+            return "under"
+        elif yPos + PADDLE_SIZE[1]//8 - self.expected_pos.y < -PADDLE_SIZE[1]//4:
+            return "over"
+        else:
+            return "drift"
+
     def move(self, time_passed, ball) -> None:
         #Accelerate
         if self.player:
@@ -115,6 +136,8 @@ class Paddle:
             else:
                 self.vel.y -= self.vel.y / (MAX_FPS * 1.3) #Found experimentally
         else:
+            if self.expected_pos == 0:
+                self.expected_pos = self.calculate_expected_pos(ball)
             if ball.vel.x > 0:
                 self.last_ball_dir = "right"
                 if self.wait_to_calculate > 0: self.wait_to_calculate -= 1
@@ -126,10 +149,11 @@ class Paddle:
                     self.last_ball_dir = "left"
                     self.expected_pos = self.calculate_expected_pos(ball)
                     self.wait_to_calculate = 0
-            if self.expected_pos.y > self.pos.y + PADDLE_SIZE[1]//2:
-                self.vel.y += PADDLE_VEL
-            elif self.expected_pos.y < self.pos.y + PADDLE_SIZE[1]//2:
+            probable_drift = self.calculate_expected_drift("larger") #expected_pos y is larger than self y
+            if probable_drift == "under":
                 self.vel.y -= PADDLE_VEL
+            elif probable_drift == "over":
+                self.vel.y += PADDLE_VEL
             else:
                 self.vel.y -= self.vel.y / (MAX_FPS * 1.3)
         #Move
@@ -211,7 +235,7 @@ class Ball:
         newVec = 0 #This is a unit vector, hehe.
         if paddle.side == "left": newVec = vector2(-math.cos(w), -math.sin(w))
         else: newVec = vector2(math.cos(w), -math.sin(w))
-        magnitude = self.vel.get_magnitude() * 1.05 * -1
+        magnitude = self.vel.get_magnitude() * GAME_INTENSIFYING_CONSTANT * -1
         self.vel.normalize()
         newVec = newVec + self.vel #The two vectors can be scalar multiplied by some percentage for different admixtures.
         newVec.normalize()
@@ -472,6 +496,20 @@ def main_menu() -> None:
 
         screen.fill(BLACK)
 
+        pseudopaddle = pygame.Surface( (PADDLE_SIZE[0]//2, PADDLE_SIZE[1]//2) )
+        pseudopaddle.fill(COLOUR)
+        pseudopaddle = pseudopaddle.convert()
+        screen.blit(pseudopaddle, (SCREEN_SIZE[0]//2 - PADDLE_SIZE[1],
+                                   SCREEN_SIZE[1]//10 - PADDLE_SIZE[0]//2))
+        screen.blit(pseudopaddle, (SCREEN_SIZE[0]//2 + PADDLE_SIZE[1],
+                                   SCREEN_SIZE[1]//10 + PADDLE_SIZE[0]//2))
+        pseudoball = pygame.Surface( (BALL_DIAMETER//2, BALL_DIAMETER//2) )
+        pseudoball.fill(BLACK)
+        pygame.draw.circle( pseudoball, COLOUR, (BALL_DIAMETER//4, BALL_DIAMETER//4), BALL_DIAMETER//4)
+        pseudoball = pseudoball.convert()
+        screen.blit(pseudoball, (SCREEN_SIZE[0]//2 + BALL_DIAMETER//4,
+                                 SCREEN_SIZE[1]//10 - BALL_DIAMETER//4))
+
         for i in range(len(options)):
             if i == selection:
                 blinker = not blinker
@@ -501,5 +539,5 @@ def load_settings() -> None:
 
 if __name__ == '__main__':
     load_settings()
-    #display_intro()
+    display_intro()
     main_menu()
