@@ -103,12 +103,13 @@ class Paddle:
                 posVec.x = BALL_DIAMETER//2
                 velVec.x *= -1
             #And finally, handling for when found the expected pos
-            if posVec.x + BALL_DIAMETER//2 > SCREEN_SIZE[0] - PADDLE_SIZE[0]//2:
+            if posVec.x + BALL_DIAMETER//2 > SCREEN_SIZE[0] - PADDLE_SIZE[0]:
                 return posVec
+
     def calculate_expected_drift(self, case):
         yVel = self.vel.y
         yPos = self.pos.y
-        while yVel > 1:
+        while yVel > 5:
             yVel -= yVel / (MAX_FPS * 1.3)
             #movesim
             yPos += yVel * 1/MAX_FPS
@@ -118,9 +119,9 @@ class Paddle:
             elif yPos + PADDLE_SIZE[1] > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
                 yVel *= -0.75
                 yPos = SCREEN_SIZE[1] - PADDLE_SIZE[1] - HORIZONTAL_BAR[1]
-        if yPos - PADDLE_SIZE[1]//8 - self.expected_pos.y > PADDLE_SIZE[1]//4:
+        if yPos + PADDLE_SIZE[1]//3 - self.expected_pos.y > PADDLE_SIZE[1]//4:
             return "under"
-        elif yPos + PADDLE_SIZE[1]//4 - self.expected_pos.y < -PADDLE_SIZE[1]//4:
+        elif (yPos + PADDLE_SIZE[1] - PADDLE_SIZE[1]//3) - self.expected_pos.y < -PADDLE_SIZE[1]//4:
             return "over"
         else:
             return "drift"
@@ -155,6 +156,11 @@ class Paddle:
             elif probable_drift == "over":
                 self.vel.y += PADDLE_VEL
             else:
+                if abs(self.pos.y + PADDLE_SIZE[1]//2 - self.expected_pos.y) > PADDLE_SIZE[1]:
+                    if self.pos.y + PADDLE_SIZE[1]//2 > self.expected_pos.y:
+                        self.vel.y -= PADDLE_VEL
+                    else:
+                        self.vel.y += PADDLE_VEL
                 self.vel.y -= self.vel.y / (MAX_FPS * 1.3)
         #Move
         self.pos.y += self.vel.y * time_passed
@@ -175,6 +181,8 @@ class Ball:
         self.vel = vector2(SCREEN_SIZE[0] * random.random(), SCREEN_SIZE[1] * random.random())
         if random.random() < 0.5: self.vel.x *= -1
         if random.random() < 0.5: self.vel.y *= -1
+        if abs(self.vel.x) < SCREEN_SIZE[0] * 0.1:
+            self.reset()
 
     def __init__(self):
         self.pos = None
@@ -537,5 +545,5 @@ def load_settings() -> None:
 
 if __name__ == '__main__':
     load_settings()
-    display_intro()
+    #display_intro()
     main_menu()
