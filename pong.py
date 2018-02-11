@@ -120,7 +120,7 @@ class Paddle:
                 yPos = SCREEN_SIZE[1] - PADDLE_SIZE[1] - HORIZONTAL_BAR[1]
         if yPos - PADDLE_SIZE[1]//8 - self.expected_pos.y > PADDLE_SIZE[1]//4:
             return "under"
-        elif yPos + PADDLE_SIZE[1]//8 - self.expected_pos.y < -PADDLE_SIZE[1]//4:
+        elif yPos + PADDLE_SIZE[1]//4 - self.expected_pos.y < -PADDLE_SIZE[1]//4:
             return "over"
         else:
             return "drift"
@@ -170,7 +170,7 @@ class Paddle:
 
 class Ball:
     def reset(self) -> None:
-        self.recent_hit = 0
+        self.last_hit = None
         self.pos = vector2(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]//2)
         self.vel = vector2(SCREEN_SIZE[0] * random.random(), SCREEN_SIZE[1] * random.random())
         if random.random() < 0.5: self.vel.x *= -1
@@ -183,7 +183,7 @@ class Ball:
         self.surface.set_colorkey(PUREBLACK)
         pygame.draw.circle( self.surface, COLOUR, (BALL_DIAMETER//2, BALL_DIAMETER//2), BALL_DIAMETER//2)
         self.surface = self.surface.convert_alpha()
-        self.recent_hit = None
+        self.last_hit = None
         self.reset()
 
     def horizontal_bar_check_and_adjustment(self) -> None:
@@ -205,8 +205,6 @@ class Ball:
     def simple_collision_check(self, paddles) -> Paddle: #Can also return None!
         left = paddles[0]
         right = paddles[1]
-        if self.recent_hit > 0:
-            return None
         if self.pos.x + BALL_DIAMETER < right.pos.x and self.pos.x > left.pos.x + PADDLE_SIZE[0]:
             return None
         #If we progress below here, a hit might happen... since the ball isn't *between* the paddles!
@@ -245,12 +243,12 @@ class Ball:
     def move(self, time_passed, paddles) -> None:
         self.pos.x += self.vel.x * time_passed
         self.pos.y += self.vel.y * time_passed
-        if self.recent_hit > 0: self.recent_hit -= 1
         self.horizontal_bar_check_and_adjustment()
         quick_collision = self.simple_collision_check(paddles) #quick_collision will contain a paddle - or None.
         if quick_collision: 
-            self.recent_hit = RECENT_HIT_RESET
-            self.collision_handling(quick_collision)
+            if quick_collision.side != self.last_hit:
+                self.last_hit = quick_collision.side
+                self.collision_handling(quick_collision)
 
     def draw(self) -> None:
         screen.blit(self.surface, (self.pos.x, self.pos.y))
