@@ -25,9 +25,17 @@ player_two_up = pygame.K_o
 player_two_down = pygame.K_l
 points_per_game = 5
 
+pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
 font = pygame.font.SysFont("Mono", 32)
+try:
+    bounce_sound = pygame.mixer.Sound('bounce.wav')
+    score_sound = pygame.mixer.Sound('score.wav')
+    paddle_sound = pygame.mixer.Sound('paddle_bounce.wav')
+    menu_sound = pygame.mixer.Sound('menu.wav')
+except:
+    raise UserWarning("Couldn't load sound files.")
 
 class Play_Background:
     def __init__(self):
@@ -165,6 +173,7 @@ class Paddle:
         #Move
         self.pos.y += self.vel.y * time_passed
         if self.pos.y < HORIZONTAL_BAR[1] or self.pos.y + PADDLE_SIZE[1] > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
+            paddle_sound.play()
             self.vel.y *= -0.75
             if self.pos.y < HORIZONTAL_BAR[1]:
                 self.pos.y = HORIZONTAL_BAR[1]
@@ -197,6 +206,7 @@ class Ball:
     def horizontal_bar_check_and_adjustment(self) -> None:
         if self.pos.y < HORIZONTAL_BAR[1] or self.pos.y + BALL_DIAMETER > SCREEN_SIZE[1] - HORIZONTAL_BAR[1]:
             self.vel.y *= -1
+            bounce_sound.play()
             if self.pos.y < HORIZONTAL_BAR[1]:
                 self.pos.y = HORIZONTAL_BAR[1]
             else:
@@ -255,6 +265,7 @@ class Ball:
         quick_collision = self.simple_collision_check(paddles) #quick_collision will contain a paddle - or None.
         if quick_collision: 
             if quick_collision.side != self.last_hit:
+                bounce_sound.play()
                 self.last_hit = quick_collision.side
                 self.collision_handling(quick_collision)
 
@@ -315,6 +326,7 @@ def play(win_score: int, two_player_mode: bool) -> str: #returns 'left' or 'righ
         
         scorer = ball.score_check() #Either "left", "right" or None
         if scorer:
+            score_sound.play()
             if scorer == "left":
                 paddles[0].score += 1
                 if paddles[0].score >= win_score:
@@ -378,6 +390,7 @@ def settings_menu() -> None:
                     if event.key == pygame.K_ESCAPE:
                         exit()
                     if event.key != pygame.K_RETURN:
+                        menu_sound.play()
                         globals()[var] = event.key
                         return
 
@@ -412,31 +425,38 @@ def settings_menu() -> None:
                 if event.key == pygame.K_ESCAPE:
                     exit()
                 elif event.key == pygame.K_RETURN:
+                    menu_sound.play()
                     options[selection]['func'](options[selection]['var'])
                     if options[selection]['var'] == 'return': return
                 elif event.key in [pygame.K_DOWN, player_one_down, player_two_down]:
+                    menu_sound.play()
                     if selection == len(options) - 1: selection = 0
                     else: selection += 1
                 elif event.key in [pygame.K_UP, player_one_up, player_two_up]:
+                    menu_sound.play()
                     if selection == 0: selection = len(options) - 1
                     else: selection -= 1
                 elif event.key == pygame.K_RIGHT:
                     var = options[selection]['var']
                     if var == 'COLOUR':
+                        menu_sound.play()
                         if colour_selection == len(colour_options) -1: 
                             colour_selection = 0
                         else: colour_selection += 1
                         globals()[var] = colour_options[colour_selection]
                     elif var == 'points_per_game':
+                        menu_sound.play()
                         globals()[var] += 1
                 elif event.key == pygame.K_LEFT:
                     var = options[selection]['var']
                     if var == 'COLOUR':
+                        menu_sound.play()
                         if colour_selection == 0:
                             colour_selection = len(colour_options) - 1
                         else: colour_selection -= 1
                         globals()[var] = colour_options[colour_selection]
                     if var == 'points_per_game':
+                        menu_sound.play()
                         globals()[var] = max(1, points_per_game - 1)
 
         screen.fill(BLACK)
@@ -492,11 +512,14 @@ def main_menu() -> None:
                 if event.key == pygame.K_ESCAPE:
                     exit()
                 elif event.key == pygame.K_RETURN:
+                    menu_sound.play()
                     options[selection]['func']()
                 elif event.key in [pygame.K_DOWN, player_one_down, player_two_down]:
+                    menu_sound.play()
                     if selection == len(options) - 1: selection = 0
                     else: selection += 1
                 elif event.key in [pygame.K_UP, player_one_up, player_two_up]:
+                    menu_sound.play()
                     if selection == 0: selection = len(options) - 1
                     else: selection -= 1
 
@@ -545,5 +568,5 @@ def load_settings() -> None:
 
 if __name__ == '__main__':
     load_settings()
-    #display_intro()
+    display_intro()
     main_menu()
