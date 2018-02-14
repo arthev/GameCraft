@@ -10,6 +10,8 @@ BLACK = colour_constants.DISPLAYBLACK
 PUREBLACK = colour_constants.PUREBLACK #Easy access for colorkey.
 SETTINGS_PATH = "config_worm.cfg"
 
+MENU_DWINDLE = 0.6
+
 up_button = pygame.K_UP
 left_button = pygame.K_LEFT
 down_button = pygame.K_DOWN
@@ -17,11 +19,12 @@ right_button = pygame.K_RIGHT
 
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
-global_font = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//20)
+global_font = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//20, bold=True)
 
 scene_stack = []
 
-def ef(): pass
+def ef(): 
+    print("Yeah...")
 
 class Scene:
     def __init__(self): pass
@@ -55,7 +58,7 @@ class Menu_Scene(Scene):
         self.selection = self.get_select_down()
 
     def call_selected(self):
-        pass
+        self.options[self.selection]["func"]()
 
     def update(self):
         for event in pygame.event.get():
@@ -68,9 +71,23 @@ class Menu_Scene(Scene):
 
     def draw(self):
         screen.fill(BLACK)
+
         cur_sel = self.options[self.selection]["surface"]
         screen.blit(cur_sel, (HALF_WIDTH - cur_sel.get_width()//2,
                               HALF_HEIGHT - cur_sel.get_height()//2))
+        
+        abo_sel_o = self.options[self.get_select_up()]["surface"]
+        abo_sel = pygame.transform.smoothscale(abo_sel_o, (round(abo_sel_o.get_width()*MENU_DWINDLE),
+                                                    (round(abo_sel_o.get_height()*MENU_DWINDLE))))
+        screen.blit(abo_sel, (HALF_WIDTH - abo_sel.get_width()//2,
+                             HALF_HEIGHT - cur_sel.get_height() * 1.5))
+
+        bel_sel_o = self.options[self.get_select_down()]["surface"]
+        bel_sel = pygame.transform.smoothscale(bel_sel_o, (round(bel_sel_o.get_width()*MENU_DWINDLE),
+                                                    (round(bel_sel_o.get_height()*MENU_DWINDLE))))
+        screen.blit(bel_sel, (HALF_WIDTH - bel_sel.get_width()//2,
+                              HALF_HEIGHT + cur_sel.get_height() * 1.5 - bel_sel.get_height()))
+
         pygame.display.update()
 
 
@@ -81,7 +98,7 @@ class Main_Menu(Menu_Scene):
         options = [{"text":"Play",       "func": ef, "surface": None},
                    {"text":"High Score", "func": ef, "surface": None},
                    {"text":"Settings",   "func": ef, "surface": None},
-                   {"text":"Exit",       "func": ef, "surface": None}]
+                   {"text":"Exit",       "func": exit, "surface": None}]
 
         Menu_Scene.__init__(self, options)
 
