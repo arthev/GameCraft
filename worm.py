@@ -27,7 +27,7 @@ screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
 global_font = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//20, bold=True)
 
 scene_stack = []
-d = Enum('Direction', 'DOWN RIGHT UP LEFT VER HOR')
+d = Enum('Direction', 'DOWN RIGHT UP LEFT')
 
 def ef(): 
     print("Yeah...")
@@ -132,7 +132,7 @@ class Game_Scene(Scene):
     def get_apple_position(self):
         pos = random.randint(0, self.width), random.randint(0, self.height)
         for segment in self.snake:
-            if segment[0] == pos:
+            if segment == pos:
                 return self.get_apple_position()
         return pos
 
@@ -143,26 +143,34 @@ class Game_Scene(Scene):
         middle_w = self.width//2
         middle_h = self.height//2
         
-        self.snake = deque([((middle_w, middle_h), d.VER),
-                            ((middle_w, middle_h - 1), d.VER),
-                            ((middle_w, middle_h - 2), d.VER)])
+        self.snake = deque([(middle_w, middle_h),
+                            (middle_w, middle_h - 1),
+                            (middle_w, middle_h - 2)])
         self.v = d.DOWN #This is the direction variable.
         self.apple = self.get_apple_position()
 
-        self.ver_sur = pygame.Surface( (BLOCKSIZE, BLOCKSIZE) )
-        self.ver_sur.fill(BLACK)
-        pygame.draw.rect(self.ver_sur, COLOUR, (BLOCKSIZE//8, BLOCKSIZE//16, BLOCKSIZE - BLOCKSIZE//8, BLOCKSIZE - BLOCKSIZE//16))
-        self.ver_sur.convert()
-        self.hor_sur = pygame.Surface( (BLOCKSIZE, BLOCKSIZE) )
-        self.hor_sur.fill(BLACK)
-        pygame.draw.rect(self.hor_sur, COLOUR, (BLOCKSIZE//16, BLOCKSIZE//8, BLOCKSIZE - BLOCKSIZE//16, BLOCKSIZE - BLOCKSIZE//8))
-        self.hor_sur.convert()
-        self.head_sur = pygame.Surface ( (BLOCKSIZE, BLOCKSIZE) )
-        self.head_sur.fill(BLACK)
-        pygame.draw.rect(self.head_sur, COLOUR, (BLOCKSIZE//8, BLOCKSIZE//16, BLOCKSIZE - BLOCKSIZE//8, BLOCKSIZE - BLOCKSIZE//16))
-        pygame.draw.circle(self.head_sur, BLACK, (BLOCKSIZE//4 + BLOCKSIZE//16, BLOCKSIZE - BLOCKSIZE//4), 4)
-        pygame.draw.circle(self.head_sur, BLACK, (BLOCKSIZE - BLOCKSIZE//4 + BLOCKSIZE//16, BLOCKSIZE - BLOCKSIZE//4), 4)
-        self.head_sur.convert()
+        BZS = BLOCKSIZE//16
+        BZE = BLOCKSIZE//8
+        BZF = BLOCKSIZE//4
+        block_surface = pygame.Surface( (BLOCKSIZE, BLOCKSIZE) )
+        block_surface.fill(BLACK)
+        pygame.draw.rect(block_surface, COLOUR, (BZS, BZS, BLOCKSIZE - BZS, BLOCKSIZE - BZS))
+        self.seg_sur = block_surface.convert()
+        #Now for the head...
+        pygame.draw.circle(block_surface, BLACK, (BZF, BLOCKSIZE - BZF), BZE)
+        pygame.draw.circle(block_surface, BLACK, (BLOCKSIZE - BZF, BLOCKSIZE - BZF), BZE)
+        self.head_sur_d = block_surface.convert()
+        pygame.draw.circle(block_surface, COLOUR, (BLOCKSIZE - BZF, BLOCKSIZE - BZF), BZE)
+        pygame.draw.circle(block_surface, BLACK, (BZF, BZF), BZE)
+        self.head_sur_l = block_surface.convert()
+        pygame.draw.circle(block_surface, COLOUR, (BZF, BLOCKSIZE - BZF), BZE)
+        pygame.draw.circle(block_surface, BLACK, (BLOCKSIZE - BZF, BZF), BZE)
+        self.head_sur_u = block_surface.convert()
+        pygame.draw.circle(block_surface, COLOUR, (BZF, BZF), BZE)
+        pygame.draw.circle(block_surface, BLACK, (BLOCKSIZE - BZF, BLOCKSIZE - BZF), BZE)
+        self.head_sur_r = block_surface.convert()
+
+        #And now the apple...
         self.apple_sur = pygame.Surface( (BLOCKSIZE, BLOCKSIZE) )
         self.apple_sur.fill(BLACK)
         pygame.draw.circle(self.apple_sur, COLOUR, (BLOCKSIZE//2, BLOCKSIZE//2), BLOCKSIZE//2, BLOCKSIZE//8)
@@ -192,29 +200,27 @@ class Game_Scene(Scene):
                 elif event.key == right_button:
                     if not prev_v == d.LEFT: self.v = d.RIGHT
         
-        head_x, head_y = self.snake[0][0]
+        head_x, head_y = self.snake[0]
         if self.v == d.DOWN: dy = 1
         elif self.v == d.UP: dy = -1
         else: dy = 0
         if self.v == d.RIGHT: dx = 1
         elif self.v == d.LEFT: dx = -1
         else: dx = 0
-        if self.v == d.DOWN or self.v == d.UP: mode = d.VER
-        else: mode = d.HOR
         if head_x + dx > self.width: dx = -head_x
         elif head_x + dx < 0: dx = self.width
         if head_y + dy > self.height: dy = -head_y
         elif head_y + dy < 0: dy = self.height
 
-        self.snake.appendleft(((head_x + dx, head_y + dy), mode))
+        self.snake.appendleft((head_x + dx, head_y + dy))
 
-        if self.apple != self.snake[0][0]:
+        if self.apple != self.snake[0]:
             self.snake.pop()
         else:
             self.apple = self.get_apple_position()
 
         for i, s in enumerate(self.snake):
-            if s[0] == self.snake[0][0] and i != 0:
+            if s == self.snake[0] and i != 0:
                 self.game_over()
 
     def game_over(self):
@@ -224,13 +230,14 @@ class Game_Scene(Scene):
     def draw(self):
         screen.fill(BLACK)
         for segment in self.snake:
-            if segment[1] == d.VER: cur_sur = self.ver_sur
-            else: cur_sur = self.hor_sur
-            x, y = segment[0]
-            screen.blit(cur_sur, (x * BLOCKSIZE, y * BLOCKSIZE))
+            x, y = segment
+            screen.blit(self.seg_sur, (x * BLOCKSIZE, y * BLOCKSIZE))
         #Turns out deques can't be sliced. But I just want to draw the head itself differently anyhow. Well, I can just draw it over the result from the loop above...
-        x, y = self.snake[0][0]
-        screen.blit(pygame.transform.rotate(self.head_sur, 90*(self.v.value - 1)), (x * BLOCKSIZE, y * BLOCKSIZE)) 
+        x, y = self.snake[0]
+        if self.v == d.DOWN: screen.blit(self.head_sur_d, (x * BLOCKSIZE, y * BLOCKSIZE))
+        elif self.v == d.RIGHT: screen.blit(self.head_sur_r, (x * BLOCKSIZE, y * BLOCKSIZE))
+        elif self.v == d.UP: screen.blit(self.head_sur_u, (x * BLOCKSIZE, y * BLOCKSIZE))
+        elif self.v == d.LEFT: screen.blit(self.head_sur_l, (x * BLOCKSIZE, y * BLOCKSIZE))
         x, y = self.apple
         screen.blit(self.apple_sur, (x * BLOCKSIZE, y * BLOCKSIZE))
 
