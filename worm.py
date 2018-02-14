@@ -31,6 +31,7 @@ class Scene:
     def update(self): pass
     def draw(self): pass
 
+
 class Menu_Scene(Scene):
     def __init__(self, options, keybindings = None):
         if keybindings == None:
@@ -39,7 +40,6 @@ class Menu_Scene(Scene):
                                 {pygame.K_RETURN: self.call_selected},
                                 {pygame.K_ESCAPE: exit}]
         else: self.keybindings = keybindings
-
         self.selection = 0
         self.options = options
         for e in self.options:
@@ -91,13 +91,31 @@ class Menu_Scene(Scene):
         pygame.display.update()
 
 
+
+class Settings_Menu(Menu_Scene):
+    def save_settings(self):
+        #TODO: Actual saving lol
+        scene_stack.pop()
+
+    def __init__(self):
+        options = [{"text":"Dummy", "func": ef, "surface":None},
+                   {"text":"Save Settings", "func": self.save_settings, "surface": None}]
+        Menu_Scene.__init__(self, options)
+
+
+
+
+
 class Main_Menu(Menu_Scene):
+    def goto_settings(self):
+        scene_stack.append(Settings_Menu())
+
     def __init__(self):
 
         #Leave surface: None for those without any extras.
         options = [{"text":"Play",       "func": ef, "surface": None},
                    {"text":"High Score", "func": ef, "surface": None},
-                   {"text":"Settings",   "func": ef, "surface": None},
+                   {"text":"Settings",   "func": self.goto_settings, "surface": None},
                    {"text":"Exit",       "func": exit, "surface": None}]
 
         Menu_Scene.__init__(self, options)
