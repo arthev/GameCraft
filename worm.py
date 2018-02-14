@@ -21,6 +21,7 @@ up_button = pygame.K_UP
 left_button = pygame.K_LEFT
 down_button = pygame.K_DOWN
 right_button = pygame.K_RIGHT
+pause_button = pygame.K_p
 
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
@@ -126,8 +127,38 @@ class Main_Menu(Menu_Scene):
 
         Menu_Scene.__init__(self, options)
 
+class Pause(Scene):
+    def pause_over(self):
+        scene_stack.pop()
+
+    def __init__(self):
+        self.background = pygame.Surface.copy(screen)
+    
+    def update(self):
+        for event in pygame.event.get():
+            if event.type == pygame.constants.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pause_button or event.key == pygame.K_RETURN:
+                    self.pause_over()
+                elif event.key == pygame.K_ESCAPE:
+                    exit()
+    
+    def draw(self):  
+        overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+        pygame.draw.rect(overlay, (0, 0, 0, 200), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+        text = global_font.render("Paused", False, COLOUR).convert_alpha()
+        screen.blit(self.background, (0, 0))
+        screen.blit(overlay, (0, 0))
+        screen.blit(text, (HALF_WIDTH - text.get_width()//2,
+                           HALF_HEIGHT- text.get_height()//2))
+
+
+
 
 class Game_Scene(Scene):
+    def goto_pause(self):
+        scene_stack.append(Pause())
 
     def get_apple_position(self):
         pos = random.randint(0, self.width), random.randint(0, self.height)
@@ -199,6 +230,8 @@ class Game_Scene(Scene):
                     if not prev_v == d.RIGHT: self.v = d.LEFT
                 elif event.key == right_button:
                     if not prev_v == d.LEFT: self.v = d.RIGHT
+                elif event.key == pause_button:
+                    self.goto_pause()
         
         head_x, head_y = self.snake[0]
         if self.v == d.DOWN: dy = 1
