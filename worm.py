@@ -15,9 +15,15 @@ COLOUR = colour_constants.AMBER
 BLACK = colour_constants.DISPLAYBLACK
 PUREBLACK = colour_constants.PUREBLACK #Easy access for colorkey.
 SETTINGS_PATH = Path("data", "config_worm.cfg")
+HIGHSCORE_PATH = Path("data", "scores.txt")
 
 MENU_DWINDLE = 0.6
 APPLE_SCORE = 10
+high_scores = {1:{"name":"Geir", "score":666666},
+               2:{"name":"Alfred", "score":4300},
+               3:{"name":"Gôring", "score":250},
+               4:{"name":"Hilbert", "score":60},
+               5:{"name":"Neil Bitchtits", "score":2}}
 
 up_button = pygame.K_UP
 left_button = pygame.K_LEFT
@@ -215,12 +221,14 @@ class Settings_Menu(Menu_Scene):
 class Main_Menu(Menu_Scene):
     def goto_settings(self):
         scene_stack.append(Settings_Menu())
+    def goto_highscore(self):
+        scene_stack.append(High_Score_View())
     def start_game(self):
         scene_stack.append(Game_Scene())
 
     def __init__(self):
         options = [{"text":"Play",       "func": self.start_game, "surface": None},
-                   {"text":"High Score", "func": ef, "surface": None},
+                   {"text":"High Score", "func": self.goto_highscore, "surface": None},
                    {"text":"Settings",   "func": self.goto_settings, "surface": None},
                    {"text":"Exit",       "func": exit, "surface": None}]
         #Create a little snaky drawing to spruce up
@@ -280,6 +288,18 @@ class Overlay_Scene(Scene):
                     self.cont()
                 elif event.key == pygame.K_ESCAPE:
                     exit()
+
+class High_Score_View(Overlay_Scene):
+    def draw(self):
+        screen.fill(BLACK)
+        fifth = SCREEN_SIZE[1]//5
+        for i in high_scores:
+            name = high_scores[i]["name"]
+            if name == None: name = ""
+            score = high_scores[i]["score"]
+            text = global_font.render("{:6} : {}".format(score, name), False, COLOUR).convert_alpha()
+            screen.blit(text, (SCREEN_SIZE[0]//6, (int(i)-1)*fifth + fifth//3))
+
 
 class Set_Key(Overlay_Scene):
     def cont(self, key):
@@ -502,8 +522,19 @@ def load_settings():
         scene_stack.append(Settings_Menu())
         scene_stack[-1].save_settings() #This pops the save_settings too.
 
+def load_highscore():
+    if HIGHSCORE_PATH.is_file():
+        with open(str(HIGHSCORE_PATH), 'r') as score_file:
+            global high_scores
+            high_scores = json.load(score_file)
+    else:
+        with open(str(HIGHSCORE_PATH), 'w') as score_file:
+            json.dump(high_scores, score_file)
+
+
 if __name__ == '__main__':
     load_settings()
+    load_highscore()
     #scene_stack.append(Splash_Screen())
     scene_stack.append(Main_Menu())
     #scene_stack.append(Game_Scene())

@@ -1,0 +1,1 @@
+{"1": {"score": 666666, "name": "Geir"}, "2": {"score": 4300, "name": "Alfred"}, "3": {"score": 250, "name": "G\u00f4ring"}, "4": {"score": 60, "name": "Hilbert"}, "5": {"score": 2, "name": "Neil Bitchtits"}}
