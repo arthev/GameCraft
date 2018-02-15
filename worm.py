@@ -41,7 +41,6 @@ class Scene:
     def update(self): pass
     def draw(self): pass
 
-
 class Menu_Scene(Scene):
     #Leave surface: None for those without any extras, in the options.
     def __init__(self, options, keybindings = None):
@@ -76,7 +75,11 @@ class Menu_Scene(Scene):
         if "left" in cur: cur["left"]()
 
     def call_selected(self):
-        self.options[self.selection]["func"]()
+        selected = self.options[self.selection]
+        if "var" in selected:
+            selected["func"](selected)
+        else:
+            self.options[self.selection]["func"]()
 
     def update(self):
         for event in pygame.event.get():
@@ -90,6 +93,8 @@ class Menu_Scene(Scene):
     def get_base_surface(self, specifier):
         if specifier["surface"] == None:
             return global_font.render(specifier["text"], False, COLOUR).convert_alpha()
+        elif "var" in specifier:
+            return specifier["surface"](specifier)
         else:
             return specifier["surface"]()
 
@@ -112,8 +117,6 @@ class Menu_Scene(Scene):
         screen.blit(bel_sel, (HALF_WIDTH - bel_sel.get_width()//2,
                               HALF_HEIGHT + cur_sel.get_height() * 1.5 - bel_sel.get_height()))
 
-
-
 class Settings_Menu(Menu_Scene):
     def save_settings(self):
         current_settings = {'COLOUR':COLOUR,
@@ -126,9 +129,16 @@ class Settings_Menu(Menu_Scene):
         with open(str(SETTINGS_PATH), 'w') as settings_file:
             json.dump(current_settings, settings_file)
         scene_stack.pop()
+        scene_stack.pop()
+        menu = Main_Menu()
+        menu.selection = 3
+        scene_stack.append(menu)
 
-    def colour_surface(self):
-        text = global_font.render("Colour", False, COLOUR).convert_alpha()
+    def set_key(self, specifier):
+        scene_stack.append(Set_Key(specifier))
+
+    def arrow_surface(self, msg):
+        text = global_font.render(msg, False, COLOUR).convert_alpha()
 
         h = text.get_height()*0.75//1
         arrows = pygame.Surface((h, h))
@@ -144,6 +154,9 @@ class Settings_Menu(Menu_Scene):
         c_sur.blit(text, (arrows.get_width() + h//4, 0))
         c_sur.convert_alpha()
         return c_sur
+
+    def colour_surface(self):
+        return self.arrow_surface("Colour")
     def colour_right(self):
         global COLOUR
         if self.colour_selection == len(self.colour_options) - 1:
@@ -158,22 +171,7 @@ class Settings_Menu(Menu_Scene):
         COLOUR = self.colour_options[self.colour_selection]
 
     def speed_surface(self):
-        text = global_font.render("Difficulty: " + str(fps), False, COLOUR).convert_alpha()
-
-        h = text.get_height()*0.75//1
-        arrows = pygame.Surface((h, h))
-        arrows.fill(BLACK)
-        pygame.draw.polygon(arrows, COLOUR,
-                ( (0, h//2), (h//2 - h//8, h//4), (h//2 - h//8, 3*h//4) ) )
-        pygame.draw.polygon(arrows, COLOUR,
-                ( (h, h//2), (h//2 + h//8, h//4), (h//2 + h//8, 3*h//4) ) )
-        c_sur = pygame.Surface((text.get_width() + arrows.get_width() + h//4,
-                                 text.get_height()))
-        c_sur.fill(BLACK)
-        c_sur.blit(arrows, (0, h//8))
-        c_sur.blit(text, (arrows.get_width() + h//4, 0))
-        c_sur.convert_alpha()
-        return c_sur
+        return self.arrow_surface("Difficulty: " + str(fps))
     def speed_right(self):
         global fps
         fps += 1
@@ -181,7 +179,9 @@ class Settings_Menu(Menu_Scene):
         global fps
         fps = max(1, fps - 1)
 
-
+    def key_surface(self, specifier):
+        key_name = pygame.key.name(globals()[specifier["var"]])
+        return global_font.render(specifier["text"] + key_name, False, COLOUR).convert_alpha()
 
     def __init__(self):
         self.colour_options = [colour_constants.AMBER,
@@ -195,17 +195,22 @@ class Settings_Menu(Menu_Scene):
         for i, colour in enumerate(self.colour_options):
             if colour == COLOUR:
                 self.colour_selection = i
-        options = [{"text":"Dummy", "func": ef, "surface":None},
-                   {"text":"Colour", "func": ef, "surface":self.colour_surface,
+        options = [{"text":"Colour", "func": ef, "surface":self.colour_surface,
                        "right":self.colour_right, "left":self.colour_left},
                    {"text":"Speed", "func": ef, "surface":self.speed_surface,
                        "right":self.speed_right, "left":self.speed_left},
+                   {"text":"Up:", "func": self.set_key, "var":"up_button",
+                       "surface":self.key_surface},
+                   {"text":"Down:", "func": self.set_key, "var":"down_button",
+                       "surface":self.key_surface},
+                   {"text":"Left:", "func": self.set_key, "var":"left_button",
+                       "surface":self.key_surface},
+                   {"text":"Right:", "func": self.set_key, "var":"right_button",
+                       "surface":self.key_surface},
+                   {"text":"Pause:", "func": self.set_key, "var":"pause_button",
+                       "surface":self.key_surface},
                    {"text":"Save Settings", "func": self.save_settings, "surface": None}]
         Menu_Scene.__init__(self, options)
-
-
-
-
 
 class Main_Menu(Menu_Scene):
     def goto_settings(self):
@@ -214,24 +219,25 @@ class Main_Menu(Menu_Scene):
         scene_stack.append(Game_Scene())
 
     def __init__(self):
-
         options = [{"text":"Play",       "func": self.start_game, "surface": None},
                    {"text":"High Score", "func": ef, "surface": None},
                    {"text":"Settings",   "func": self.goto_settings, "surface": None},
                    {"text":"Exit",       "func": exit, "surface": None}]
-
         Menu_Scene.__init__(self, options)
 
 class Overlay_Scene(Scene):
     def cont(self):
         scene_stack.pop()
+
     def __init__(self):
         self.background = pygame.Surface.copy(screen)
         self.overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
         pygame.draw.rect(self.overlay, (0, 0, 0, 200), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+
     def draw(self):
         screen.blit(self.background, (0, 0))
         screen.blit(self.overlay, (0, 0))
+
     def update(self):
         for event in pygame.event.get():
             if event.type == pygame.constants.QUIT:
@@ -241,7 +247,30 @@ class Overlay_Scene(Scene):
                     self.cont()
                 elif event.key == pygame.K_ESCAPE:
                     exit()
- 
+
+class Set_Key(Overlay_Scene):
+    def cont(self, key):
+        globals()[self.specified["var"]] = key
+        scene_stack.pop()
+
+    def __init__(self, specified):
+        self.specified = specified
+        Overlay_Scene.__init__(self)
+
+    def draw(self):
+        Overlay_Scene.draw(self)
+        text = global_font.render("Press desired key...", False, COLOUR).convert_alpha()
+        screen.blit(text, (HALF_WIDTH - text.get_width()//2,
+                           HALF_HEIGHT- text.get_height()//2))
+
+    def update(self):
+        for event in pygame.event.get():
+            if event.type == pygame.constants.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key != pause_button and event.key != pygame.K_RETURN:
+                    self.cont(event.key)
+
 class Pause(Overlay_Scene):
     def draw(self):  
         Overlay_Scene.draw(self)
@@ -300,7 +329,6 @@ class Game_Scene(Scene):
         self.v = d.DOWN #This is the direction variable.
         self.apple = self.get_apple_position()
 
-
     def __init__(self):
         self.width = SCREEN_SIZE[0]//BLOCKSIZE - 1 #0-indexed
         self.height = SCREEN_SIZE[1]//BLOCKSIZE - 1
@@ -336,11 +364,9 @@ class Game_Scene(Scene):
         pygame.draw.circle(self.apple_sur, COLOUR, (BLOCKSIZE//2, BLOCKSIZE//2), BLOCKSIZE//2, BLOCKSIZE//8)
         pygame.draw.circle(self.apple_sur, COLOUR, (BLOCKSIZE//2, BLOCKSIZE//2), BLOCKSIZE//4, BLOCKSIZE//4)
         self.apple_sur.convert()
-        
 
         self.clock = pygame.time.Clock()
         
-
     def update(self):
         self.clock.tick(self.speed)
         
@@ -421,7 +447,6 @@ class Game_Scene(Scene):
         elif self.v == d.LEFT: screen.blit(self.head_sur_l, (x * BLOCKSIZE, y * BLOCKSIZE))
         x, y = self.apple
         screen.blit(self.apple_sur, (x * BLOCKSIZE, y * BLOCKSIZE))
-
 
 def main_loop():
     while True:
