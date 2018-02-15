@@ -223,7 +223,40 @@ class Main_Menu(Menu_Scene):
                    {"text":"High Score", "func": ef, "surface": None},
                    {"text":"Settings",   "func": self.goto_settings, "surface": None},
                    {"text":"Exit",       "func": exit, "surface": None}]
+        #Create a little snaky drawing to spruce up
+        bz = BLOCKSIZE//2
+        bzz = max(bz//16, 1)
+        bzf = bz//4
+        bze = bz//8
+        self.spruce = pygame.Surface((bz*8, bz*8))
+        self.spruce.fill(BLACK)
+        block_sur = pygame.Surface((bz, bz))
+        block_sur.fill(BLACK)
+        pygame.draw.rect(block_sur, COLOUR,
+                (bzz, bzz, bz - bzz, bz - bzz))
+        block_sur = block_sur.convert()
+        for t in [(2,4),(2,5),(2,6),(2,7),
+                  (3,7),
+                  (4,7),(5,7),
+                  (5,6),(5,5),(5,4),(5,3)]:
+            x, y = t
+            self.spruce.blit(block_sur, (x*bz, y*bz))
+        head_sur = block_sur
+        pygame.draw.circle(head_sur, BLACK,
+                (bzf, bzf), bze)
+        pygame.draw.circle(head_sur, BLACK,
+                (bz - bzf, bzf), bze)
+        head_sur = head_sur.convert()
+        x, y = (5, 2)
+        self.spruce.blit(head_sur, (x*bz, y*bz))
+
         Menu_Scene.__init__(self, options)
+
+    def draw(self):
+        Menu_Scene.draw(self)
+        screen.blit(self.spruce,
+                (HALF_WIDTH - self.spruce.get_width()//2,
+                self.spruce.get_height()//6))
 
 class Overlay_Scene(Scene):
     def cont(self):
