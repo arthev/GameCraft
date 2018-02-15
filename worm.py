@@ -8,7 +8,7 @@ SCREEN_SIZE = (640, 480)
 HALF_WIDTH = SCREEN_SIZE[0]//2
 HALF_HEIGHT = SCREEN_SIZE[1]//2
 BLOCKSIZE = 32
-MAX_FPS = 10
+FPS = 10
 
 COLOUR = colour_constants.AMBER
 BLACK = colour_constants.DISPLAYBLACK
@@ -16,6 +16,7 @@ PUREBLACK = colour_constants.PUREBLACK #Easy access for colorkey.
 SETTINGS_PATH = "config_worm.cfg"
 
 MENU_DWINDLE = 0.6
+APPLE_SCORE = 10
 
 up_button = pygame.K_UP
 left_button = pygame.K_LEFT
@@ -40,6 +41,7 @@ class Scene:
 
 
 class Menu_Scene(Scene):
+    #Leave surface: None for those without any extras, in the options.
     def __init__(self, options, keybindings = None):
         if keybindings == None:
             self.keybindings = [{up_button: self.select_up},
@@ -119,7 +121,6 @@ class Main_Menu(Menu_Scene):
 
     def __init__(self):
 
-        #Leave surface: None for those without any extras.
         options = [{"text":"Play",       "func": self.start_game, "surface": None},
                    {"text":"High Score", "func": ef, "surface": None},
                    {"text":"Settings",   "func": self.goto_settings, "surface": None},
@@ -127,34 +128,63 @@ class Main_Menu(Menu_Scene):
 
         Menu_Scene.__init__(self, options)
 
-class Pause(Scene):
-    def pause_over(self):
+class Overlay_Scene(Scene):
+    def cont(self):
         scene_stack.pop()
-
     def __init__(self):
         self.background = pygame.Surface.copy(screen)
-    
+        self.overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+        pygame.draw.rect(self.overlay, (0, 0, 0, 200), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+    def draw(self):
+        screen.blit(self.background, (0, 0))
+        screen.blit(self.overlay, (0, 0))
     def update(self):
         for event in pygame.event.get():
             if event.type == pygame.constants.QUIT:
                 exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pause_button or event.key == pygame.K_RETURN:
-                    self.pause_over()
+                    self.cont()
                 elif event.key == pygame.K_ESCAPE:
                     exit()
-    
+ 
+class Pause(Overlay_Scene):
     def draw(self):  
-        overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
-        pygame.draw.rect(overlay, (0, 0, 0, 200), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+        Overlay_Scene.draw(self)
         text = global_font.render("Paused", False, COLOUR).convert_alpha()
-        screen.blit(self.background, (0, 0))
-        screen.blit(overlay, (0, 0))
         screen.blit(text, (HALF_WIDTH - text.get_width()//2,
                            HALF_HEIGHT- text.get_height()//2))
 
+class Game_Over(Overlay_Scene):
+    def cont(self):
+        scene_stack.pop()
+        scene_stack.pop()
+        #TODO: Append the high score scene...
+        #scene_stack.append(High_Score_Entry(self.score))
+    def __init__(self, score):
+        self.score = score
+        Overlay_Scene.__init__(self)
+    def draw(self):
+        Overlay_Scene.draw(self)
+        text = global_font.render("Game Over", False, COLOUR)
+        screen.blit(text, (HALF_WIDTH - text.get_width()//2,
+                           HALF_HEIGHT-text.get_height()//2))
 
+class Board_Won(Overlay_Scene):
+    def __init__(self, score):
+        self.score = score
+        Overlay_Scene.__init__(self)
 
+    def draw(self):
+        Overlay_Scene.draw(self)
+        text = global_font.render("Board Cleared! Well done!", False, COLOUR).convert_alpha()
+        screen.blit(text, (HALF_WIDTH - text.get_width()//2,
+                           HALF_HEIGHT-text.get_height()//2 - global_font.get_linesize()//2))
+        infotext = global_font.render("Press Return or Pause to continue.", False, COLOUR).convert_alpha()
+        infotext = pygame.transform.scale(infotext, (round(infotext.get_width()*MENU_DWINDLE),
+                                                     round(infotext.get_height()*MENU_DWINDLE)))
+        screen.blit(infotext, (HALF_WIDTH - infotext.get_width()//2,
+                               HALF_HEIGHT-infotext.get_height()//2 + global_font.get_linesize()//2))
 
 class Game_Scene(Scene):
     def goto_pause(self):
@@ -167,18 +197,23 @@ class Game_Scene(Scene):
                 return self.get_apple_position()
         return pos
 
-
-    def __init__(self):
-        self.width = SCREEN_SIZE[0]//BLOCKSIZE - 1 #0-indexed
-        self.height = SCREEN_SIZE[1]//BLOCKSIZE - 1
+    def reset_board(self):
         middle_w = self.width//2
         middle_h = self.height//2
-        
         self.snake = deque([(middle_w, middle_h),
                             (middle_w, middle_h - 1),
                             (middle_w, middle_h - 2)])
         self.v = d.DOWN #This is the direction variable.
         self.apple = self.get_apple_position()
+
+
+    def __init__(self):
+        self.width = SCREEN_SIZE[0]//BLOCKSIZE - 1 #0-indexed
+        self.height = SCREEN_SIZE[1]//BLOCKSIZE - 1
+
+        self.reset_board() #Sets the self.snake, self.v and self.apple members
+        self.score = 0
+        self.speed = FPS
 
         BZS = BLOCKSIZE//16
         BZE = BLOCKSIZE//8
@@ -213,7 +248,7 @@ class Game_Scene(Scene):
         
 
     def update(self):
-        self.clock.tick(MAX_FPS)
+        self.clock.tick(self.speed)
         
         prev_v = self.v
         for event in pygame.event.get():
@@ -230,6 +265,8 @@ class Game_Scene(Scene):
                     if not prev_v == d.RIGHT: self.v = d.LEFT
                 elif event.key == right_button:
                     if not prev_v == d.LEFT: self.v = d.RIGHT
+                elif event.key == pygame.K_SPACE:
+                    self.board_won()
                 elif event.key == pause_button:
                     self.goto_pause()
         
@@ -250,15 +287,30 @@ class Game_Scene(Scene):
         if self.apple != self.snake[0]:
             self.snake.pop()
         else:
+            if len(self.snake) == (self.width+1)*(self.height+1):
+                self.board_won()
             self.apple = self.get_apple_position()
+            self.score += self.speed*(APPLE_SCORE + len(self.snake))//20
+            print("New score:", self.score)
 
         for i, s in enumerate(self.snake):
             if s == self.snake[0] and i != 0:
                 self.game_over()
 
+    def board_won(self):
+        scene_stack.append(Board_Won(self.score))
+        self.reset_board()
+        self.speed += 3
+
     def game_over(self):
-        print("Well, you lost mate...")
-        scene_stack.pop()
+        N = 6
+        if N % 2 == 0: N += 1
+        for i in range(N):
+            self.clock.tick(N//2)
+            if i % 2 == 0: self.draw()
+            else: screen.fill(BLACK)
+            pygame.display.update()
+        scene_stack.append(Game_Over(self.score))
 
     def draw(self):
         screen.fill(BLACK)
@@ -290,4 +342,5 @@ if __name__ == '__main__':
     #load_settings()
     #scene_stack.append(Splash_Screen())
     scene_stack.append(Main_Menu())
+    #scene_stack.append(Game_Scene())
     main_loop()
