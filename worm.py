@@ -48,14 +48,13 @@ class Menu_Scene(Scene):
         if keybindings == None:
             self.keybindings = [{up_button: self.select_up},
                                 {down_button: self.select_down},
+                                {right_button: self.select_right},
+                                {left_button: self.select_left},
                                 {pygame.K_RETURN: self.call_selected},
                                 {pygame.K_ESCAPE: exit}]
         else: self.keybindings = keybindings
         self.selection = 0
         self.options = options
-        for e in self.options:
-            if e["surface"] == None:
-                e["surface"] = global_font.render(e["text"], False, COLOUR).convert_alpha()
 
     def get_select_up(self) -> int:
         if self.selection == 0: return len(self.options) - 1
@@ -67,6 +66,14 @@ class Menu_Scene(Scene):
         self.selection = self.get_select_up()
     def select_down(self):
         self.selection = self.get_select_down()
+
+    def select_right(self):
+        cur = self.options[self.selection]
+        if "right" in cur: cur["right"]()
+
+    def select_left(self):
+        cur = self.options[self.selection]
+        if "left" in cur: cur["left"]()
 
     def call_selected(self):
         self.options[self.selection]["func"]()
@@ -80,20 +87,26 @@ class Menu_Scene(Scene):
                     if event.key in binding:
                         binding[event.key]()
 
+    def get_base_surface(self, specifier):
+        if specifier["surface"] == None:
+            return global_font.render(specifier["text"], False, COLOUR).convert_alpha()
+        else:
+            return specifier["surface"]()
+
     def draw(self):
         screen.fill(BLACK)
 
-        cur_sel = self.options[self.selection]["surface"]
+        cur_sel = self.get_base_surface(self.options[self.selection])
         screen.blit(cur_sel, (HALF_WIDTH - cur_sel.get_width()//2,
                               HALF_HEIGHT - cur_sel.get_height()//2))
         
-        abo_sel_o = self.options[self.get_select_up()]["surface"]
+        abo_sel_o = self.get_base_surface(self.options[self.get_select_up()])
         abo_sel = pygame.transform.smoothscale(abo_sel_o, (round(abo_sel_o.get_width()*MENU_DWINDLE),
                                                     (round(abo_sel_o.get_height()*MENU_DWINDLE))))
         screen.blit(abo_sel, (HALF_WIDTH - abo_sel.get_width()//2,
                              HALF_HEIGHT - cur_sel.get_height() * 1.5))
 
-        bel_sel_o = self.options[self.get_select_down()]["surface"]
+        bel_sel_o = self.get_base_surface(self.options[self.get_select_down()])
         bel_sel = pygame.transform.smoothscale(bel_sel_o, (round(bel_sel_o.get_width()*MENU_DWINDLE),
                                                     (round(bel_sel_o.get_height()*MENU_DWINDLE))))
         screen.blit(bel_sel, (HALF_WIDTH - bel_sel.get_width()//2,
@@ -111,11 +124,82 @@ class Settings_Menu(Menu_Scene):
                             'right_button':right_button,
                             'pause_button':pause_button}
         with open(str(SETTINGS_PATH), 'w') as settings_file:
-            json.dump(default_settings, settings_file)
+            json.dump(current_settings, settings_file)
         scene_stack.pop()
 
+    def colour_surface(self):
+        text = global_font.render("Colour", False, COLOUR).convert_alpha()
+
+        h = text.get_height()*0.75//1
+        arrows = pygame.Surface((h, h))
+        arrows.fill(BLACK)
+        pygame.draw.polygon(arrows, COLOUR,
+                ( (0, h//2), (h//2 - h//8, h//4), (h//2 - h//8, 3*h//4) ) )
+        pygame.draw.polygon(arrows, COLOUR,
+                ( (h, h//2), (h//2 + h//8, h//4), (h//2 + h//8, 3*h//4) ) )
+        c_sur = pygame.Surface((text.get_width() + arrows.get_width() + h//4,
+                                 text.get_height()))
+        c_sur.fill(BLACK)
+        c_sur.blit(arrows, (0, h//8))
+        c_sur.blit(text, (arrows.get_width() + h//4, 0))
+        c_sur.convert_alpha()
+        return c_sur
+    def colour_right(self):
+        global COLOUR
+        if self.colour_selection == len(self.colour_options) - 1:
+            self.colour_selection = 0
+        else: self.colour_selection += 1
+        COLOUR = self.colour_options[self.colour_selection]
+    def colour_left(self):
+        global COLOUR
+        if self.colour_selection == 0:
+            self.colour_selection = len(self.colour_options) - 1
+        else: self.colour_selection -= 1
+        COLOUR = self.colour_options[self.colour_selection]
+
+    def speed_surface(self):
+        text = global_font.render("Difficulty: " + str(fps), False, COLOUR).convert_alpha()
+
+        h = text.get_height()*0.75//1
+        arrows = pygame.Surface((h, h))
+        arrows.fill(BLACK)
+        pygame.draw.polygon(arrows, COLOUR,
+                ( (0, h//2), (h//2 - h//8, h//4), (h//2 - h//8, 3*h//4) ) )
+        pygame.draw.polygon(arrows, COLOUR,
+                ( (h, h//2), (h//2 + h//8, h//4), (h//2 + h//8, 3*h//4) ) )
+        c_sur = pygame.Surface((text.get_width() + arrows.get_width() + h//4,
+                                 text.get_height()))
+        c_sur.fill(BLACK)
+        c_sur.blit(arrows, (0, h//8))
+        c_sur.blit(text, (arrows.get_width() + h//4, 0))
+        c_sur.convert_alpha()
+        return c_sur
+    def speed_right(self):
+        global fps
+        fps += 1
+    def speed_left(self):
+        global fps
+        fps = max(1, fps - 1)
+
+
+
     def __init__(self):
+        self.colour_options = [colour_constants.AMBER,
+                               colour_constants.LTAMBER,
+                               colour_constants.GREEN1,
+                               colour_constants.APPLE1,
+                               colour_constants.GREEN2,
+                               colour_constants.APPLE2,
+                               colour_constants.GREEN3]
+        self.colour_selection = 0
+        for i, colour in enumerate(self.colour_options):
+            if colour == COLOUR:
+                self.colour_selection = i
         options = [{"text":"Dummy", "func": ef, "surface":None},
+                   {"text":"Colour", "func": ef, "surface":self.colour_surface,
+                       "right":self.colour_right, "left":self.colour_left},
+                   {"text":"Speed", "func": ef, "surface":self.speed_surface,
+                       "right":self.speed_right, "left":self.speed_left},
                    {"text":"Save Settings", "func": self.save_settings, "surface": None}]
         Menu_Scene.__init__(self, options)
 
@@ -320,6 +404,7 @@ class Game_Scene(Scene):
             if i % 2 == 0: self.draw()
             else: screen.fill(BLACK)
             pygame.display.update()
+        self.clock.tick(N//2)
         scene_stack.append(Game_Over(self.score))
 
     def draw(self):
@@ -362,6 +447,6 @@ def load_settings():
 if __name__ == '__main__':
     load_settings()
     #scene_stack.append(Splash_Screen())
-    #scene_stack.append(Main_Menu())
+    scene_stack.append(Main_Menu())
     #scene_stack.append(Game_Scene())
     main_loop()
