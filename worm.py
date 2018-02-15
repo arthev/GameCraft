@@ -19,11 +19,11 @@ HIGHSCORE_PATH = Path("data", "scores.txt")
 
 MENU_DWINDLE = 0.6
 APPLE_SCORE = 10
-high_scores = {1:{"name":"Geir", "score":666666},
-               2:{"name":"Alfred", "score":4300},
-               3:{"name":"Gôring", "score":250},
-               4:{"name":"Hilbert", "score":60},
-               5:{"name":"Neil Bitchtits", "score":2}}
+high_scores = {1:{"name":None, "score":0},
+               2:{"name":None, "score":0},
+               3:{"name":None, "score":0},
+               4:{"name":None, "score":0},
+               5:{"name":None, "score":0}}
 
 up_button = pygame.K_UP
 left_button = pygame.K_LEFT
@@ -39,8 +39,7 @@ global_font = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//20, bold=True)
 scene_stack = []
 d = Enum('Direction', 'DOWN RIGHT UP LEFT')
 
-def ef(): 
-    print("Yeah...")
+def ef(): pass
 
 class Scene:
     def __init__(self): pass
@@ -300,6 +299,55 @@ class High_Score_View(Overlay_Scene):
             text = global_font.render("{:6} : {}".format(score, name), False, COLOUR).convert_alpha()
             screen.blit(text, (SCREEN_SIZE[0]//6, (int(i)-1)*fifth + fifth//3))
 
+class High_Score_Entry(Scene):
+    def save_scores(self):
+        with open(str(HIGHSCORE_PATH), 'w') as score_file:
+            json.dump(high_scores, score_file)
+    
+    def no_score(self):
+        scene_stack.pop()
+    
+    def yes_score(self):
+        high_scores[self.hit] = {"name":self.name, "score":self.score}
+        self.save_scores()
+        scene_stack.pop()
+        scene_stack.append(High_Score_View())
+
+    def __init__(self, score):
+        if score <= high_scores["5"]["score"]:
+            self.no_score()
+            return
+        self.score = score
+        self.hit = "5"
+        for i in range(5, 0, -1):
+            if score > high_scores[str(i)]["score"]:
+                self.hit = str(i)
+        for i in range(5, int(self.hit), -1):
+            high_scores[str(i)] = high_scores[str(i-1)]
+        self.name = ""
+
+    def update(self):
+        for event in pygame.event.get():
+            if event.type == pygame.constants.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.unicode.isalpha():
+                    self.name += event.unicode
+                elif event.key == pygame.K_BACKSPACE:
+                    if self.name == "": pass
+                    else: self.name = self.name[:-1]
+                elif event.key == pygame.K_RETURN:
+                    self.yes_score()
+
+    def draw(self):
+        screen.fill(BLACK)
+        text = global_font.render("New highscore! Enter your name...", False, COLOUR).convert_alpha()
+        screen.blit(text, (HALF_WIDTH - text.get_width()//2,
+                          HALF_HEIGHT - global_font.get_linesize()//2))
+        nametext = global_font.render(self.name, False, COLOUR).convert_alpha()
+        screen.blit(nametext, (HALF_WIDTH - nametext.get_width()//2,
+                              HALF_HEIGHT + global_font.get_linesize()//2))
+
 
 class Set_Key(Overlay_Scene):
     def cont(self, key):
@@ -335,8 +383,7 @@ class Game_Over(Overlay_Scene):
     def cont(self):
         scene_stack.pop()
         scene_stack.pop()
-        #TODO: Append the high score scene...
-        #scene_stack.append(High_Score_Entry(self.score))
+        scene_stack.append(High_Score_Entry(self.score))
     def __init__(self, score):
         self.score = score
         Overlay_Scene.__init__(self)
@@ -345,6 +392,41 @@ class Game_Over(Overlay_Scene):
         text = global_font.render("Game Over", False, COLOUR)
         screen.blit(text, (HALF_WIDTH - text.get_width()//2,
                            HALF_HEIGHT-text.get_height()//2))
+
+class Splash_Screen(Overlay_Scene):
+    def __init__(self):
+        self.i = 0
+        self.j = 0
+        display_font = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//6, bold=True)
+        self.display_text = display_font.render("WormyWorm", False, COLOUR, BLACK).convert()
+        display_font2 = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//18, bold=True)
+        self.display_text2 = display_font2.render("by: Arthur", False, COLOUR, BLACK).convert()
+        self.display_text.set_alpha(0)
+        self.display_text2.set_alpha(0)
+
+    def update(self):
+        Overlay_Scene.update(self)
+        if self.i < 256:
+            self.i += 1
+            self.display_text.set_alpha(self.i)
+            pygame.time.wait(10)
+        elif self.j < 256:
+            self.j += 1
+            self.display_text2.set_alpha(self.i)
+            pygame.time.wait(5)
+        else:
+            pygame.time.wait(250)
+            self.cont()
+
+    def draw(self):
+        screen.fill(BLACK)
+        screen.blit(self.display_text, 
+                (HALF_WIDTH - self.display_text.get_width()//2,
+                 HALF_HEIGHT - self.display_text.get_height()))
+        screen.blit(self.display_text2,
+                (HALF_WIDTH, HALF_HEIGHT))
+
+
 
 class Board_Won(Overlay_Scene):
     def __init__(self, score):
@@ -464,7 +546,6 @@ class Game_Scene(Scene):
                 self.board_won()
             self.apple = self.get_apple_position()
             self.score += self.speed*(APPLE_SCORE + len(self.snake))//20
-            print("New score:", self.score)
 
         for i, s in enumerate(self.snake):
             if s == self.snake[0] and i != 0:
@@ -530,12 +611,11 @@ def load_highscore():
     else:
         with open(str(HIGHSCORE_PATH), 'w') as score_file:
             json.dump(high_scores, score_file)
-
+        load_highscore()
 
 if __name__ == '__main__':
     load_settings()
     load_highscore()
-    #scene_stack.append(Splash_Screen())
     scene_stack.append(Main_Menu())
-    #scene_stack.append(Game_Scene())
+    scene_stack.append(Splash_Screen())
     main_loop()
