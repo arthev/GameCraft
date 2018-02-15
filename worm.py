@@ -1,19 +1,20 @@
 import pygame
 import random
 import colour_constants
+import json
 from enum import Enum
 from collections import deque
+from pathlib import Path
 
 SCREEN_SIZE = (640, 480)
 HALF_WIDTH = SCREEN_SIZE[0]//2
 HALF_HEIGHT = SCREEN_SIZE[1]//2
 BLOCKSIZE = 32
-FPS = 10
 
 COLOUR = colour_constants.AMBER
 BLACK = colour_constants.DISPLAYBLACK
 PUREBLACK = colour_constants.PUREBLACK #Easy access for colorkey.
-SETTINGS_PATH = "config_worm.cfg"
+SETTINGS_PATH = Path("data", "config_worm.cfg")
 
 MENU_DWINDLE = 0.6
 APPLE_SCORE = 10
@@ -23,6 +24,7 @@ left_button = pygame.K_LEFT
 down_button = pygame.K_DOWN
 right_button = pygame.K_RIGHT
 pause_button = pygame.K_p
+fps = 10
 
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
@@ -101,7 +103,15 @@ class Menu_Scene(Scene):
 
 class Settings_Menu(Menu_Scene):
     def save_settings(self):
-        #TODO: Actual saving lol
+        current_settings = {'COLOUR':COLOUR,
+                            'fps':fps,
+                            'up_button':up_button,
+                            'down_button':down_button,
+                            'left_button':left_button,
+                            'right_button':right_button,
+                            'pause_button':pause_button}
+        with open(str(SETTINGS_PATH), 'w') as settings_file:
+            json.dump(default_settings, settings_file)
         scene_stack.pop()
 
     def __init__(self):
@@ -213,7 +223,7 @@ class Game_Scene(Scene):
 
         self.reset_board() #Sets the self.snake, self.v and self.apple members
         self.score = 0
-        self.speed = FPS
+        self.speed = fps
 
         BZS = BLOCKSIZE//16
         BZE = BLOCKSIZE//8
@@ -317,7 +327,8 @@ class Game_Scene(Scene):
         for segment in self.snake:
             x, y = segment
             screen.blit(self.seg_sur, (x * BLOCKSIZE, y * BLOCKSIZE))
-        #Turns out deques can't be sliced. But I just want to draw the head itself differently anyhow. Well, I can just draw it over the result from the loop above...
+        #Turns out deques can't be sliced. But I just want to draw the head differently.
+        #Well, I can just draw it over the result from the loop above, hehe.
         x, y = self.snake[0]
         if self.v == d.DOWN: screen.blit(self.head_sur_d, (x * BLOCKSIZE, y * BLOCKSIZE))
         elif self.v == d.RIGHT: screen.blit(self.head_sur_r, (x * BLOCKSIZE, y * BLOCKSIZE))
@@ -338,9 +349,19 @@ def main_loop():
             #Scene_stack empty; time to quit.
             exit()
 
+def load_settings():
+    if SETTINGS_PATH.is_file():
+        with open(str(SETTINGS_PATH), 'r') as settings_file:
+            settings = json.load(settings_file)
+            for item in settings:
+                globals()[item] = settings[item]
+    else:
+        scene_stack.append(Settings_Menu())
+        scene_stack[-1].save_settings() #This pops the save_settings too.
+
 if __name__ == '__main__':
-    #load_settings()
+    load_settings()
     #scene_stack.append(Splash_Screen())
-    scene_stack.append(Main_Menu())
+    #scene_stack.append(Main_Menu())
     #scene_stack.append(Game_Scene())
     main_loop()
