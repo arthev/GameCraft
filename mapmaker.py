@@ -33,13 +33,9 @@ def include(filename):
     if os.path.exists(filename):
         exec(open(filename).read(),globals())
 
-HW = SCREEN_SIZE[0]//2
-HH = SCREEN_SIZE[1]//2
-
 FPS = 10
 
-BLACK = (40, 40, 40)
-COLOUR = AMBER = (255, 176, 0)
+COLOUR = AMBER
 VOFFSET = 3
 
 pygame.init()
@@ -79,7 +75,9 @@ while True:
     pos = x, y
 
     for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.constants.QUIT:
+            exit()
+        elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 exit()
             elif event.unicode.isdigit():
@@ -91,17 +89,17 @@ while True:
             v = pygame.key.name(event.key)
             if v.isdigit() and int(v) == press_value:
                 press_key = False
-        if pygame.mouse.get_pressed()[0]:
-            if y >= 0:
-                #Time to 'draw' on the map!
-                a=bmap[x][y]
-                if a == max(block_surfaces):
-                    bmap[x][y]=0
-                else: 
-                    bmap[x][y] += 1
-            else:
-                if x == 0: save_file()
-                elif x==1: open_file()
+    if pygame.mouse.get_pressed()[0]:
+        if y >= 0:
+            #Time to 'draw' on the map!
+            a=bmap[x][y]
+            if a == max(block_surfaces):
+                bmap[x][y]=0
+            else: 
+                bmap[x][y] += 1
+        else:
+            if x == 0: save_file()
+            elif x==1: open_file()
 
     if press_key:
         bmap[x][y] = press_value
