@@ -81,8 +81,7 @@ class Settings_Menu(Menu_Scene):
                             'pause_button':pause_button}
         with open(str(SETTINGS_PATH), 'w') as settings_file:
             json.dump(current_settings, settings_file)
-        pop_scene()
-        change_scene(Main_Menu(2)) #Magic constant meant to set selection in main menu back to 'settings' to continue from before
+        os.execl(sys.executable, sys.executable, *sys.argv)
 
     def set_key(self, specifier):
         add_scene(Set_Key(specifier))

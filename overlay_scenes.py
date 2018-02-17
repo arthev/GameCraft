@@ -4,7 +4,7 @@ class Overlay_Scene(Scene):
     def __init__(self):
         self.background = pygame.Surface.copy(screen)
         self.overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
-        pygame.draw.rect(self.overlay, (0, 0, 0, 215), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+        pygame.draw.rect(self.overlay, (0, 0, 0, 205), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
 
     def draw(self):
         screen.blit(self.background, (0, 0))
