@@ -61,23 +61,92 @@ class Game_Scene(Scene):
             self.x = HW - self.r
             self.y = SCREEN_SIZE[1] - BH - self.r
             self.vel = Vector2(random.random()*300, random.random()*300)
+            self.recent_hit = 0
 
-        def move(self, time_passed):
+        def move(self, time_passed, paddle, bmap): 
+            #Returns (x, y) for collided-with brick (or None)
+            def check_screen_boundaries():
+                if self.x < 0 + self.r or self.x > SCREEN_SIZE[0] - self.r:
+                    self.vel.x *= -1
+                    if self.x < 0 + self.r:
+                        self.x = self.r
+                    else:
+                        self.x = SCREEN_SIZE[0] - self.r
+                if self.y < DVOFFSET + self.r or self.y > SCREEN_SIZE[1] - self.r:
+                    self.vel.y *= -1
+                    if self.y < DVOFFSET + self.r:
+                        self.y = DVOFFSET + self.r
+                    else:
+                        self.y = SCREEN_SIZE[1] - self.r
+
+            def paddle_collision_handler():
+                def simple_check():
+                    if self.y + self.r < SCREEN_SIZE[1] - paddle.h:
+                        return False
+                    if self.x + self.r < paddle.x or self.x - self.r > paddle.x + paddle.w:
+                        return False
+                    return True
+                def paddle_collision():
+                    steps = paddle.w + self.r
+                    extreme = 1.12
+                    hit = self.x - (paddle.x + paddle.w//2)
+                    w = extreme/steps*hit
+                    newVec = 0 #This is unit vector soon...
+                    newVec = Vector2(-math.sin(w), math.cos(w))
+                    mag = self.vel.get_magnitude() * GAME_INTENSIFYING_CONSTANT * -1
+                    self.vel.normalize()
+                    newVec = newVec + self.vel
+                    newVec.normalize()
+                    newVec = newVec * mag
+                    self.vel = newVec
+
+                if simple_check():
+                    if self.recent_hit <= 0:
+                        paddle_collision()
+                        self.recent_hit = RECENT_HIT_RESET
+
+            def brick_collision_handler():
+                gx = int(self.x // BW)
+                gy = int(self.y // BH - VOFFSET)
+                if bmap[gx][gy] != 0:
+                    return (gx, gy)
+                horiz = 0
+                rx = self.x / BW - gx
+                if rx < self.r / BW:
+                    horiz = -1
+                elif abs(rx-1) < self.r / BW:
+                    horiz = 1
+                vertic = 0
+                ry = self.y / BH - gy
+                if ry < self.r / BH:
+                    vertic = -1
+                elif abs(ry-1) < self.r / BH:
+                    vertic = 1
+                if horiz == 0 and vertic == 0:
+                    return None
+                fx = gx + horiz
+                fy = gy + vertic
+                if bmap[fx][fy] == 0:
+                    return None
+                if horiz != 0:
+                    self.vel.x *= -1
+                if vertic != 0:
+                    self.vel.y *= -1
+                return (gx + horiz, gy + vertic)
+
+
+
+
+
+
+
+
+            self.recent_hit -= 1
             self.x += self.vel.x * time_passed
             self.y += self.vel.y * time_passed
-            if self.x < 0 + self.r or self.x > SCREEN_SIZE[0] - self.r:
-                self.vel.x *= -1
-                if self.x < 0 + self.r:
-                    self.x = self.r
-                else:
-                    self.x = SCREEN_SIZE[0] - self.r
-            if self.y < DVOFFSET + self.r or self.y > SCREEN_SIZE[1] - self.r:
-                self.vel.y *= -1
-                if self.y < DVOFFSET + self.r:
-                    self.y = DVOFFSET + self.r
-                else:
-                    self.y = SCREEN_SIZE[1] - self.r
-
+            check_screen_boundaries()
+            paddle_collision_handler()
+            return brick_collision_handler()
 
         def draw(self):
             screen.blit(self.sur, (self.x - self.r, self.y - self.r))
@@ -134,7 +203,12 @@ class Game_Scene(Scene):
                     self.goto_pause()
 
         self.paddle.move(time_passed)
-        self.ball.move(time_passed)
+        collided_brick = self.ball.move(time_passed, self.paddle, self.bmap)
+        if collided_brick:
+            #TODO: implement better handling here
+            bx, by = collided_brick
+            self.bmap[bx][by] = 0
+            print("Collided at", collided_brick[0], collided_brick[1])
 
 
 

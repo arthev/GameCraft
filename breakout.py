@@ -3,12 +3,15 @@ import random
 import os
 import sys
 import json
+import math
 from constants import *
 
 SETTINGS_PATH = os.path.join("data", "config_breakout.cfg")
 HIGHSCORE_PATH = os.path.join("data", "scores.txt")
 MAP_DIR = "naps"
 
+RECENT_HIT_RESET = 50
+GAME_INTENSIFYING_CONSTANT = 1.02
 PADDLE_VEL = 500
 PADDLE_FRICTION = 3
 COLOUR = AMBER
