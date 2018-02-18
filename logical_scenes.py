@@ -163,6 +163,7 @@ class Game_Scene(Scene):
                 return build_map
         else:
             change_scene(Game_Won(self.score))
+            return {i:[0 for j in range(SCREEN_SIZE[1]//BH)] for i in range(SCREEN_SIZE[0]//BW)}
 
     def set_life_surface(self):
         s = DVOFFSET
@@ -194,9 +195,9 @@ class Game_Scene(Scene):
     #the appropriate init call, including sending old lives and paddles
     #forwards, hehe.
     def __init__(self, level=1, paddle=None, lives=None, ball=None, score=0):
+        self.score = score
         self.level = level
         self.bmap = self.load_level()
-        self.score = score
         self.clock = pygame.time.Clock()
         if not paddle: self.paddle = self.Paddle()
         else: self.paddle = paddle
@@ -247,9 +248,13 @@ class Game_Scene(Scene):
                 if e != 0:
                     return
         #If execution goes here, the board's clear.
-        change_scene(Game_Scene(level = self.level + 1,
-            paddle=self.paddle, lives = self.lives,
-            ball=self.ball, score=self.score))
+        fn = os.path.join(MAP_DIR, str(self.level + 1) + ".abrm")
+        if os.path.isfile(fn):
+            change_scene(Game_Scene(level = self.level + 1,
+                    paddle=self.paddle, lives = self.lives,
+                    ball=self.ball, score=self.score))
+        else:
+            change_scene(Game_Won(self.score))
 
     def game_over(self):
         N = 6
@@ -260,7 +265,7 @@ class Game_Scene(Scene):
             else: screen.fill(BLACK)
             pygame.display.update()
         self.clock.tick(N//2)
-        add_scene(Game_Over(self.score))
+        change_scene(Game_Over(self.score))
 
     def draw(self):
         screen.fill(BLACK)
@@ -298,13 +303,12 @@ class High_Score_Entry(Scene):
             json.dump(high_scores, score_file)
 
     def no_score(self):
-        scene_stack.pop()
+        pop_scene()
 
     def yes_score(self):
         high_scores[self.hit] = {"name":self.name, "score":self.score}
         self.save_scores()
-        scene_stack.pop()
-        scene_stack.append(High_Score_View())
+        change_scene(High_Score_View())
 
     def __init__(self, score):
         if score <= high_scores["5"]["score"]:

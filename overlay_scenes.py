@@ -63,8 +63,8 @@ class Pause(Overlay_Scene):
 
 class Game_Over(Overlay_Scene):
     def cont(self):
-        pop_scene()
         change_scene(High_Score_Entry(self.score))
+
     def __init__(self, score):
         self.score = score
         Overlay_Scene.__init__(self)
@@ -73,6 +73,16 @@ class Game_Over(Overlay_Scene):
         text = gfont.render("Game Over", False, COLOUR)
         screen.blit(text, (HW - text.get_width()//2,
                            HH-text.get_height()//2))
+
+class Game_Won(Game_Over):
+    def draw(self):
+        Overlay_Scene.draw(self)
+        text = gfont.render("You won!", False, COLOUR)
+        screen.blit(text, (HW - text.get_width()//2,
+                           HH - text.get_height()//2))
+        text = gfont.render("CONGRATULATIONS!", False, COLOUR)
+        screen.blit(text, (HW - text.get_width()//2,
+                           HH + text.get_height()//2))
 
 class Splash_Screen(Overlay_Scene):
     def __init__(self):
