@@ -149,6 +149,156 @@ class Game_Scene(Scene):
         def draw(self):
             screen.blit(self.sur, (self.x - self.r, self.y - self.r))
 #"-------------------------------------------------------------------"
+    class Powerup:
+        def enlarge_paddle(self): 
+            self.paddle.w = min(self.paddle.w + BW//8, SCREEN_SIZE[0])
+            if self.paddle.w + BW//8 > SCREEN_SIZE[0]:
+                self.paddle.w = SCREEN_SIZE[0]
+                self.paddle.x = 0
+            else:
+                self.paddle.w += BW//8
+                self.paddle.x = max(0, min(self.paddle.x - BW//16, SCREEN_SIZE[0] - self.paddle.w))
+            self.paddle.create_surface()
+        def shrink_paddle(self):
+            if self.paddle.w <= BW//32:
+                pass
+            elif self.paddle.w - BW//8 < BW//32:
+                diff = abs(self.paddle.w - BW//8 - BW//32)
+                self.paddle.w = BW//32
+                self.paddle.x += diff//2
+                if self.paddle.x + self.paddle.w > SCREEN_SIZE[0]:
+                    self.paddle.x = SCREEN_SIZE[0] - self.paddle.w
+            else:
+                self.paddle.w -= BW//8
+                self.paddle.x += BW//16
+            self.paddle.create_surface()
+        def enlarge_ball(self):
+            if self.ball.r < BW//2:
+                self.ball.r += 2
+                self.ball.create_surface()
+        def shrink_ball(self):
+            if self.ball.r > BW//64:
+                self.ball.r -= 2
+                if self.ball.r < BW//64:
+                    self.ball.r = BW//64
+                self.ball.create_surface()
+        def extra_life(self):
+            self.game.lives += 1
+            self.game.set_life_surface()
+        def death_up(self):
+            self.game.die()
+
+
+        surfaci = {}
+        ps = BW//2
+        base_sur = pygame.Surface( (ps, ps) )
+        base_sur.fill(BLACK)
+        pygame.draw.rect(base_sur, COLOUR, (0, 0, ps, ps), 2)
+
+        e_sur = base_sur.copy()
+        pygame.draw.polygon(e_sur, COLOUR,
+                ( (ps//16, ps//2), (ps//2 - ps//8, ps//4),
+                    (ps//2 - ps//8, 3*ps//4) ) )
+        pygame.draw.polygon(e_sur, COLOUR,
+                ( (ps - ps//16, ps//2), (ps//2 + ps//8, ps//4),
+                    (ps//2 + ps//8, 3*ps//4) ) )
+        e_sur = e_sur.convert()
+        surfaci["enlarge_paddle"] = e_sur
+
+        s_sur = base_sur.copy()
+        pygame.draw.polygon(s_sur, COLOUR,
+                ( (ps//2 - ps//8, ps//2), (ps//8, ps//4),
+                    (ps//8, 3*ps//4) ) )
+        pygame.draw.polygon(s_sur, COLOUR,
+                ( (ps//2 + ps//8, ps//2), (ps - ps//8, ps//4),
+                    (ps - ps//8, 3*ps//4) ) )
+        s_sur = s_sur.convert()
+        surfaci["shrink_paddle"] = s_sur
+
+        be_sur = base_sur.copy()
+        pygame.draw.circle(be_sur, COLOUR,
+                (ps//2, ps//2), 4)
+        pygame.draw.lines(be_sur, COLOUR, False,
+                [(ps//2, ps//8), (ps - ps//8, ps//8),
+                    (ps - ps//8, ps//2), (ps - ps//8, ps//8),
+                    (ps//2, ps//2)], 1)
+        pygame.draw.lines(be_sur, COLOUR, False,
+                [(ps//2, ps - ps//8), (ps//8, ps - ps//8),
+                    (ps//8, ps//2), (ps//8, 7*ps//8),
+                    (ps//2, ps//2)], 1)
+        be_sur = be_sur.convert()
+        surfaci["enlarge_ball"] = be_sur
+
+        bs_sur = base_sur.copy()
+        pygame.draw.circle(bs_sur, COLOUR,
+                (ps//2, ps//2), 4)
+        pygame.draw.lines(bs_sur, COLOUR, False,
+                [(ps//8, ps//8), (ps//3, ps//3),
+                    (ps//3, ps//8), (ps//3, ps//3),
+                    (ps//8, ps//3)], 1)
+        pygame.draw.lines(bs_sur, COLOUR, False,
+                [(7*ps//8, 7*ps//8), (2*ps//3, 2*ps//3),
+                    (2*ps//3,7*ps//8), (2*ps//3, 2*ps//3),
+                    (7*ps//8, 2*ps//3)], 1)
+        bs_sur = bs_sur.convert()
+        surfaci["shrink_ball"] = bs_sur
+
+        el_sur = base_sur.copy()
+        pygame.draw.polygon(el_sur, COLOUR,
+                [(ps//2, 7*ps//8), (ps//8, ps//2), (7*ps//8, ps//2)])
+        pygame.draw.circle(el_sur, COLOUR,
+                (ps//3, ps//2), ps//5)
+        pygame.draw.circle(el_sur, COLOUR,
+                (2*ps//3 + ps//16, ps//2), ps//5)
+        el_sur = el_sur.convert()
+        surfaci["extra_life"] = el_sur
+
+        d_sur = base_sur.copy()
+        pygame.draw.circle(d_sur, COLOUR,
+                (ps//4, ps//4), ps//8)
+        pygame.draw.circle(d_sur, COLOUR,
+                (3*ps//4, ps//4), ps//8)
+        pygame.draw.circle(d_sur, COLOUR,
+                (ps//4, 3*ps//4), ps//8)
+        pygame.draw.circle(d_sur, COLOUR,
+                (3*ps//4, 3*ps//4), ps//8)
+        pygame.draw.line(d_sur, COLOUR,
+                (ps//4, ps//4), (3*ps//4, 3*ps//4), ps//8)
+        pygame.draw.line(d_sur, COLOUR,
+                (ps//4, 3*ps//4), (3*ps//4, ps//4), ps//8)
+        d_sur = d_sur.convert()
+        surfaci["death_up"] = d_sur
+
+
+        effects = {}
+        effects["enlarge_paddle"] = enlarge_paddle
+        effects["shrink_paddle"] = shrink_paddle
+        effects["enlarge_ball"] = enlarge_ball
+        effects["shrink_ball"] = shrink_ball
+        effects["extra_life"] = extra_life
+        effects["death_up"] = death_up
+
+        def __init__(self, x, y, paddle, ball, game):
+            self.x = x
+            self.y = y
+            self.paddle = paddle
+            self.ball = ball
+            self.game = game
+            indicator = random.randint(1, 100)
+            if indicator >= 1 and indicator <= 100:
+                self.type = "death_up"
+
+        def move(self):
+            self.y += 4
+            if self.x < self.paddle.x + self.paddle.w and self.x + self.ps > self.paddle.x:
+                if self.y < self.paddle.y + self.paddle.h and self.y + self.ps > self.paddle.y:
+                    #collision!
+                    self.y += 1000 #This will make the game update destruct the powerup in the next frame
+                    self.effects[self.type](self)
+
+        def draw(self):
+            screen.blit(self.surfaci[self.type], (self.x, self.y))
+#"-------------------------------------------------------------------"
     def goto_pause(self):
         add_scene(Pause())
 
@@ -162,14 +312,13 @@ class Game_Scene(Scene):
                     build_map[int(i)] = jmap[i]
                 return build_map
         else:
-            change_scene(Game_Won(self.score))
-            return {i:[0 for j in range(SCREEN_SIZE[1]//BH)] for i in range(SCREEN_SIZE[0]//BW)}
+            print("file not found despite pre-testing:", fn)
+            print("Shutting down...")
 
     def set_life_surface(self):
         s = DVOFFSET
         n_sur = pygame.Surface( (s, s) )
         n_sur.fill(BLACK)
-#        pygame.draw.rect(n_sur, COLOUR, (0, 0, s, s), 1)
         pygame.draw.polygon(n_sur, COLOUR,
                 ( (s//2, s - s//12), (s//16, s//3), (s - s//16, s//3)))
         pygame.draw.circle(n_sur, COLOUR,
@@ -207,6 +356,7 @@ class Game_Scene(Scene):
         else: self.ball = ball
         self.ball.starting_pos()
         self.paddle.starting_pos()
+        self.powerups = []
         
         self.l_sur = gfont.render("Level - " + str(self.level), False, COLOUR).convert_alpha()
         self.set_life_surface()
@@ -214,6 +364,7 @@ class Game_Scene(Scene):
 
     def update(self):
         time_passed =  self.clock.tick(fps) / 1000.0 #in seconds
+        suicide = False
 
         for event in pygame.event.get():
             if event.type == pygame.constants.QUIT:
@@ -223,8 +374,19 @@ class Game_Scene(Scene):
                     exit()
                 elif event.key == pause_button:
                     self.goto_pause()
+                elif event.key == pygame.K_SPACE:
+                    self.powerups.append(self.Powerup(HW, HH, self.paddle, self.ball, self))
+                elif event.key == suicide_button:
+                    suicide = True
+                elif event.key == pygame.K_w:
+                    self.bmap = {i:[0 for j in range(SCREEN_SIZE[1]//BH)] for i in range(SCREEN_SIZE[0]//BW)}
 
         self.paddle.move(time_passed)
+        for p in self.powerups:
+            p.move()
+        for i in range(len(self.powerups) - 1, -1, -1):
+            if self.powerups[i].y > SCREEN_SIZE[1]:
+                self.powerups.pop(i)
         collided_brick = self.ball.move(time_passed, self.paddle, self.bmap)
         if collided_brick:
             #TODO: implement better handling here
@@ -232,15 +394,19 @@ class Game_Scene(Scene):
             self.bmap[bx][by] = 0
             self.score += 10
         death = self.ball.death()
-        if death:
-            self.lives -= 1
-            if self.lives < 0:
-                self.game_over()
-            else:
-                self.ball = self.Ball()
-                self.paddle = self.Paddle()
-                self.set_life_surface()
+        if death or suicide:
+            self.die()
         self.board_won()
+
+    def die(self):
+        self.lives -= 1
+        if self.lives < 0:
+            self.game_over()
+        else:
+            self.ball = self.Ball()
+            self.paddle = self.Paddle()
+            self.set_life_surface()
+            self.powerups = []
 
     def board_won(self):
         for x in self.bmap:
@@ -287,6 +453,8 @@ class Game_Scene(Scene):
                 if e == 0: continue
                 screen.blit(block_surfaces[e],
                         (i*BW, (j+VOFFSET)*BH))
+        for p in self.powerups:
+            p.draw()
         self.paddle.draw()
         self.ball.draw()
 
@@ -312,18 +480,23 @@ class High_Score_Entry(Scene):
 
     def __init__(self, score):
         if score <= high_scores["5"]["score"]:
-            self.no_score()
+            self.flag = True
             return
-        self.score = score
-        self.hit = "5"
-        for i in range(5, 0, -1):
-            if score > high_scores[str(i)]["score"]:
-                self.hit = str(i)
-        for i in range(5, int(self.hit), -1):
-            high_scores[str(i)] = high_scores[str(i-1)]
-        self.name = ""
+        else:
+            self.flag = False
+            self.score = score
+            self.hit = "5"
+            for i in range(5, 0, -1):
+                if score > high_scores[str(i)]["score"]:
+                    self.hit = str(i)
+            for i in range(5, int(self.hit), -1):
+                high_scores[str(i)] = high_scores[str(i-1)]
+            self.name = ""
 
     def update(self):
+        if self.flag:
+            self.no_score()
+            return
         for event in pygame.event.get():
             if event.type == pygame.constants.QUIT:
                 exit()
@@ -337,6 +510,8 @@ class High_Score_Entry(Scene):
                     self.yes_score()
 
     def draw(self):
+        if self.flag:
+            return
         screen.fill(BLACK)
         text = gfont.render("New highscore! Enter your name...", False, COLOUR).convert_alpha()
         screen.blit(text, (HW - text.get_width()//2,
@@ -344,6 +519,3 @@ class High_Score_Entry(Scene):
         nametext = gfont.render(self.name, False, COLOUR).convert_alpha()
         screen.blit(nametext, (HW - nametext.get_width()//2,
             HH + gfont.get_linesize()//2))
-
-
-

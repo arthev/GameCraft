@@ -145,11 +145,11 @@ class Settings_Menu(Menu_Scene):
 
 class Main_Menu(Menu_Scene):
     def goto_settings(self):
-        scene_stack.append(Settings_Menu())
+        add_scene(Settings_Menu())
     def goto_highscore(self):
-        scene_stack.append(High_Score_View())
+        add_scene(High_Score_View())
     def start_game(self):
-        scene_stack.append(Game_Scene())
+        add_scene(Game_Scene())
 
     def __init__(self, selection=0):
         options = [{"text":"Play",       "func": self.start_game, "surface": None},

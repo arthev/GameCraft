@@ -20,6 +20,7 @@ left_button = pygame.K_LEFT
 down_button = pygame.K_DOWN
 right_button = pygame.K_RIGHT
 pause_button = pygame.K_p
+suicide_button = pygame.K_k
 fps = 60
 lives_setting = 2
 
@@ -68,11 +69,12 @@ DVOFFSET = 3 * BH
 scene_stack = []
 
 def ef(): pass
-def add_scene(scene): scene_stack.append(scene)
-def pop_scene(): scene_stack.pop()
-def change_scene(scene): pop_scene(); add_scene(scene)
+def add_scene(scene): scene_stack.append(scene); #print(scene_stack)
+def pop_scene(): scene_stack.pop(); #print(scene_stack)
+def change_scene(scene): pop_scene(); add_scene(scene); #print(scene_stack)
 
 def main_loop():
+    last_stack = []
     while True:
         try:
             current_scene = scene_stack[-1]
