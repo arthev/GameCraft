@@ -60,7 +60,7 @@ class Game_Scene(Scene):
         def starting_pos(self):
             self.x = HW - self.r
             self.y = SCREEN_SIZE[1] - BH - self.r
-            self.vel = Vector2(random.random()*300, random.random()*300)
+            self.vel = Vector2(0, 150)
             self.recent_hit = 0
 
         def move(self, time_passed, paddle, bmap): 
@@ -72,12 +72,9 @@ class Game_Scene(Scene):
                         self.x = self.r
                     else:
                         self.x = SCREEN_SIZE[0] - self.r
-                if self.y < DVOFFSET + self.r or self.y > SCREEN_SIZE[1] - self.r:
+                if self.y < DVOFFSET + self.r:
                     self.vel.y *= -1
-                    if self.y < DVOFFSET + self.r:
-                        self.y = DVOFFSET + self.r
-                    else:
-                        self.y = SCREEN_SIZE[1] - self.r
+                    self.y = DVOFFSET + self.r
 
             def paddle_collision_handler():
                 def simple_check():
@@ -106,40 +103,38 @@ class Game_Scene(Scene):
                         self.recent_hit = RECENT_HIT_RESET
 
             def brick_collision_handler():
-                gx = int(self.x // BW)
-                gy = int(self.y // BH - VOFFSET)
+                def x2x(x): return min(int(x//BW), max(bmap))
+                def y2y(y): return min(int(y//BH) - VOFFSET, len(bmap[0]) - 1)
+                gx = x2x(self.x)
+                gy = y2y(self.y)
+                
                 if bmap[gx][gy] != 0:
+                    if random.random() < 0.5:
+                        self.vel.x *= -1
+                    else:
+                        self.vel.y *= -1
                     return (gx, gy)
-                horiz = 0
-                rx = self.x / BW - gx
-                if rx < self.r / BW:
-                    horiz = -1
-                elif abs(rx-1) < self.r / BW:
-                    horiz = 1
-                vertic = 0
-                ry = self.y / BH - gy
-                if ry < self.r / BH:
-                    vertic = -1
-                elif abs(ry-1) < self.r / BH:
-                    vertic = 1
-                if horiz == 0 and vertic == 0:
-                    return None
-                fx = gx + horiz
-                fy = gy + vertic
-                if bmap[fx][fy] == 0:
-                    return None
-                if horiz != 0:
-                    self.vel.x *= -1
-                if vertic != 0:
-                    self.vel.y *= -1
-                return (gx + horiz, gy + vertic)
-
-
-
-
-
-
-
+                if self.vel.x > 0:
+                    dx = x2x(self.x + self.r)
+                    if dx != gx and bmap[dx][gy] != 0:
+                        self.vel.x *= -1
+                        return (dx, gy)
+                if self.vel.x < 0:
+                    dx = x2x(self.x - self.r)
+                    if dx != gx and bmap[dx][gy] != 0:
+                        self.vel.x *= -1
+                        return (dx, gy)
+                if self.vel.y > 0:
+                    dy = y2y(self.y + self.r)
+                    if dy != gy and bmap[gx][dy] != 0:
+                        self.vel.y *= -1
+                        return (gx, dy)
+                if self.vel.y < 0:
+                    dy = y2y(self.y - self.r)
+                    if dy != gy and bmap[gx][dy] != 0:
+                        self.vel.y *= -1
+                        return (gx, dy)
+                return None
 
             self.recent_hit -= 1
             self.x += self.vel.x * time_passed
@@ -148,14 +143,11 @@ class Game_Scene(Scene):
             paddle_collision_handler()
             return brick_collision_handler()
 
+        def death(self):
+            return self.y - self.r > SCREEN_SIZE[1]
+
         def draw(self):
             screen.blit(self.sur, (self.x - self.r, self.y - self.r))
-
-
-
-
-
-
 #"-------------------------------------------------------------------"
     def goto_pause(self):
         add_scene(Pause())
@@ -170,16 +162,41 @@ class Game_Scene(Scene):
                     build_map[int(i)] = jmap[i]
                 return build_map
         else:
-            print(fn, "could not be found! Shutting down...")
-            exit()
+            change_scene(Game_Won(self.score))
+
+    def set_life_surface(self):
+        s = DVOFFSET
+        n_sur = pygame.Surface( (s, s) )
+        n_sur.fill(BLACK)
+#        pygame.draw.rect(n_sur, COLOUR, (0, 0, s, s), 1)
+        pygame.draw.polygon(n_sur, COLOUR,
+                ( (s//2, s - s//12), (s//16, s//3), (s - s//16, s//3)))
+        pygame.draw.circle(n_sur, COLOUR,
+                ( (s//2 - s//12)//2 + s//12,   s//3),
+                  (s//2 - s//12)//2)
+        pygame.draw.circle(n_sur, COLOUR,
+                ( (s//2 + (s - s//6)//4), s//3),
+                 (s//2 - s//12)//2)
+
+        x_font = pygame.font.SysFont("Mono", gfont.get_height()//4, bold=True)
+        x_sur = x_font.render("x", False, COLOUR)
+        m_sur = gfont.render(str(self.lives), False, COLOUR)
+        t_sur = pygame.Surface( 
+                (n_sur.get_width() + x_sur.get_width() + m_sur.get_width(), s))
+        t_sur.fill(BLACK)
+        t_sur.blit(m_sur, (0, s//2 - m_sur.get_height()//2))
+        t_sur.blit(x_sur, (m_sur.get_width(), s//2 - x_sur.get_height()//2))
+        t_sur.blit(n_sur, (t_sur.get_width() - n_sur.get_width(), 0))
+        self.h_sur = t_sur.convert()
+
 
     #Move from one stage to the next by creating a new game scene with
     #the appropriate init call, including sending old lives and paddles
     #forwards, hehe.
-    def __init__(self, level=1, paddle=None, lives=None, ball=None):
+    def __init__(self, level=1, paddle=None, lives=None, ball=None, score=0):
         self.level = level
         self.bmap = self.load_level()
-        self.score = 0
+        self.score = score
         self.clock = pygame.time.Clock()
         if not paddle: self.paddle = self.Paddle()
         else: self.paddle = paddle
@@ -189,6 +206,10 @@ class Game_Scene(Scene):
         else: self.ball = ball
         self.ball.starting_pos()
         self.paddle.starting_pos()
+        
+        self.l_sur = gfont.render("Level - " + str(self.level), False, COLOUR).convert_alpha()
+        self.set_life_surface()
+
 
     def update(self):
         time_passed =  self.clock.tick(fps) / 1000.0 #in seconds
@@ -208,13 +229,27 @@ class Game_Scene(Scene):
             #TODO: implement better handling here
             bx, by = collided_brick
             self.bmap[bx][by] = 0
-            print("Collided at", collided_brick[0], collided_brick[1])
-
-
+            self.score += 10
+        death = self.ball.death()
+        if death:
+            self.lives -= 1
+            if self.lives < 0:
+                self.game_over()
+            else:
+                self.ball = self.Ball()
+                self.paddle = self.Paddle()
+                self.set_life_surface()
+        self.board_won()
 
     def board_won(self):
-        #TODO: Check if all bricks are 0
-        pass
+        for x in self.bmap:
+            for y, e in enumerate(self.bmap[x]):
+                if e != 0:
+                    return
+        #If execution goes here, the board's clear.
+        change_scene(Game_Scene(level = self.level + 1,
+            paddle=self.paddle, lives = self.lives,
+            ball=self.ball, score=self.score))
 
     def game_over(self):
         N = 6
@@ -230,6 +265,16 @@ class Game_Scene(Scene):
     def draw(self):
         screen.fill(BLACK)
 
+        screen.blit(self.l_sur,
+                (HW - self.l_sur.get_width()//4, 
+                    DVOFFSET//2 - self.l_sur.get_height()//2))
+        screen.blit(gfont.render("Score: " + str(self.score), False, COLOUR),
+                (0, DVOFFSET//2 - gfont.get_height()//2))
+        screen.blit(self.h_sur,
+                (SCREEN_SIZE[0] - self.h_sur.get_width(), 0))
+
+
+
         pygame.draw.line(screen, COLOUR, 
                 (0, DVOFFSET - 2), (SCREEN_SIZE[0], DVOFFSET - 2))
         for i in self.bmap:
@@ -237,7 +282,7 @@ class Game_Scene(Scene):
                 if e == 0: continue
                 screen.blit(block_surfaces[e],
                         (i*BW, (j+VOFFSET)*BH))
-                self.paddle.draw()
+        self.paddle.draw()
         self.ball.draw()
 
 
@@ -289,12 +334,12 @@ class High_Score_Entry(Scene):
 
     def draw(self):
         screen.fill(BLACK)
-        text = global_font.render("New highscore! Enter your name...", False, COLOUR).convert_alpha()
-        screen.blit(text, (HALF_WIDTH - text.get_width()//2,
-            HALF_HEIGHT - global_font.get_linesize()//2))
-        nametext = global_font.render(self.name, False, COLOUR).convert_alpha()
-        screen.blit(nametext, (HALF_WIDTH - nametext.get_width()//2,
-            HALF_HEIGHT + global_font.get_linesize()//2))
+        text = gfont.render("New highscore! Enter your name...", False, COLOUR).convert_alpha()
+        screen.blit(text, (HW - text.get_width()//2,
+            HH - gfont.get_linesize()//2))
+        nametext = gfont.render(self.name, False, COLOUR).convert_alpha()
+        screen.blit(nametext, (HW - nametext.get_width()//2,
+            HH + gfont.get_linesize()//2))
 
 
 

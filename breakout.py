@@ -21,7 +21,7 @@ down_button = pygame.K_DOWN
 right_button = pygame.K_RIGHT
 pause_button = pygame.K_p
 fps = 60
-lives_setting = 3
+lives_setting = 2
 
 
 high_scores = {1:{"name":None, "score":0},
@@ -84,7 +84,7 @@ def main_loop():
 if __name__ == '__main__':
     #Note: load_settings() now up with the imports and includes.
     load_highscore()
-    #add_scene(Main_Menu())
-    #add_scene(Splash_Screen())
-    add_scene(Game_Scene())
+    add_scene(Main_Menu())
+    add_scene(Splash_Screen())
+    #add_scene(Game_Scene())
     main_loop()
