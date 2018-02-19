@@ -71,13 +71,6 @@ class Menu_Scene(Scene):
         screen.blit(b_sur, (HW - b_sur.get_width()//2,
                               HH + b_sur.get_height()))
 
-class Settings_Menu(Menu_Scene):
-    def exit_settings(self):
-        save_settings()
-        os.execl(sys.executable, sys.executable, *sys.argv)
-
-    def set_key(self, specifier):
-        add_scene(Set_Key(specifier))
 
     def arrow_surface(self, msg):
         text = gfont.render(msg, False, COLOUR).convert_alpha()
@@ -96,6 +89,16 @@ class Settings_Menu(Menu_Scene):
         c_sur.blit(text, (arrows.get_width() + h//4, 0))
         c_sur.convert_alpha()
         return c_sur
+
+
+class Settings_Menu(Menu_Scene):
+    def exit_settings(self):
+        save_settings()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
+    def set_key(self, specifier):
+        add_scene(Set_Key(specifier))
+
 
     def colour_surface(self):
         return self.arrow_surface("Colour")
@@ -116,6 +119,17 @@ class Settings_Menu(Menu_Scene):
         key_name = pygame.key.name(globals()[specifier["var"]])
         return gfont.render(specifier["text"] + key_name, False, COLOUR).convert_alpha()
 
+    def ball_speed_surface(self):
+        return self.arrow_surface("Ball Speed: " + str(BALL_START_VEL//50))
+    def ball_speed_right(self):
+        global BALL_START_VEL
+        BALL_START_VEL += 50
+    def ball_speed_left(self):
+        global BALL_START_VEL
+        if BALL_START_VEL > 50:
+            BALL_START_VEL -= 50
+        
+
     def __init__(self):
         self.colour_selection = 0
         for i, colour in enumerate(COLOURLIST):
@@ -123,6 +137,8 @@ class Settings_Menu(Menu_Scene):
                 self.colour_selection = i
         options = [{"text":"Colour", "func": ef, "surface":self.colour_surface,
                        "right":self.colour_right, "left":self.colour_left},
+                   {"text":"Ball Speed", "func": ef, "surface":self.ball_speed_surface, 
+                       "right":self.ball_speed_right, "left":self.ball_speed_left},
                    {"text":"Up:", "func": self.set_key, "var":"up_button",
                        "surface":self.key_surface},
                    {"text":"Down:", "func": self.set_key, "var":"down_button",
@@ -133,6 +149,8 @@ class Settings_Menu(Menu_Scene):
                        "surface":self.key_surface},
                    {"text":"Pause:", "func": self.set_key, "var":"pause_button",
                        "surface":self.key_surface},
+                   {"text":"Suicide:", "func": self.set_key, "var":"suicide_button",
+                       "surface":self.key_surface},
                    {"text":"Save Settings", "func": self.exit_settings, "surface": None}]
         Menu_Scene.__init__(self, options)
 
@@ -142,10 +160,21 @@ class Main_Menu(Menu_Scene):
     def goto_highscore(self):
         add_scene(High_Score_View())
     def start_game(self):
-        add_scene(Game_Scene())
+        add_scene(Game_Scene(level=starting_level))
+
+    def play_right(self):
+        global starting_level
+        if starting_level < unlocked_level:
+            starting_level += 1
+    def play_left(self):
+        global starting_level
+        if starting_level > 1:
+            starting_level -= 1
+    def play_surface(self):
+        return self.arrow_surface("Play! (Lvl: " + str(starting_level) + ")")
 
     def __init__(self, selection=0):
-        options = [{"text":"Play",       "func": self.start_game, "surface": None},
+        options = [{"text":"Play",       "func": self.start_game, "surface": self.play_surface, "right":self.play_right, "left":self.play_left},
                    {"text":"High Score", "func": self.goto_highscore, "surface": None},
                    {"text":"Settings",   "func": self.goto_settings, "surface": None},
                    {"text":"Exit",       "func": exit, "surface": None}]

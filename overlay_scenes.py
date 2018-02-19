@@ -84,6 +84,20 @@ class Game_Won(Game_Over):
         screen.blit(text, (HW - text.get_width()//2,
                            HH + text.get_height()//2))
 
+class Die_Animation(Overlay_Scene):
+    def __init__(self):
+        self.i = 0
+        Overlay_Scene.__init__(self)
+        self.overlay.set_alpha(self.i)
+
+    def update(self):
+        if self.i < 256:
+            self.i += 1
+            self.overlay.set_alpha(self.i)
+        else:
+            self.cont()
+
+
 class Splash_Screen(Overlay_Scene):
     def __init__(self):
         self.i = 0

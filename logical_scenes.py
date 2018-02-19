@@ -62,7 +62,7 @@ class Game_Scene(Scene):
             self.x = HW - self.r
             self.y = SCREEN_SIZE[1] - BH - self.r
             self.vel = Vector2(0, BALL_START_VEL)
-            self.recent_hit = 0
+#            self.recent_hit = 0
 
         def move(self, time_passed, paddle, bmap): 
             #Returns (x, y) for collided-with brick (or None)
@@ -103,10 +103,13 @@ class Game_Scene(Scene):
                     newVec = newVec * mag
                     self.vel = newVec
 
+                    #Trying to set it above the paddle as well, and then maybe get rid of RECENT_HIT_RESET.
+                    self.y = paddle.y - self.r
+
                 if simple_check():
-                    if self.recent_hit <= 0:
-                        paddle_collision()
-                        self.recent_hit = RECENT_HIT_RESET
+#                    if self.recent_hit <= 0:
+                    paddle_collision()
+                    #    self.recent_hit = RECENT_HIT_RESET
 
             def brick_collision_handler():
                 def x2x(x): return min(int(x//BW), max(bmap))
@@ -142,7 +145,7 @@ class Game_Scene(Scene):
                         return (gx, dy)
                 return None
 
-            self.recent_hit -= 1
+#            self.recent_hit -= 1
             self.x += self.vel.x * time_passed
             self.y += self.vel.y * time_passed
             check_screen_boundaries()
@@ -357,6 +360,8 @@ class Game_Scene(Scene):
     #the appropriate init call, including sending old lives and paddles
     #forwards, hehe.
     def __init__(self, level=1, paddle=None, lives=None, ball=None, score=0):
+
+        global unlocked_level
         self.score = score
         self.level = level
         self.bmap = self.load_level()
@@ -370,6 +375,9 @@ class Game_Scene(Scene):
         self.ball.starting_pos()
         self.paddle.starting_pos()
         self.powerups = []
+        if self.level > unlocked_level:
+            unlocked_level = self.level
+            save_settings()
         
         self.l_sur = gfont.render("Level - " + str(self.level), False, COLOUR).convert_alpha()
         self.set_life_surface()
@@ -403,10 +411,6 @@ class Game_Scene(Scene):
         collided_brick = self.ball.move(time_passed, self.paddle, self.bmap)
         if collided_brick:
             self.brick_hit_handler(collided_brick)
-            #TODO: implement better handling here
-            #bx, by = collided_brick
-            #self.bmap[bx][by] = 0
-            #self.score += 10
         death = self.ball.death()
         if death or suicide:
             self.die()

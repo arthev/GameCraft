@@ -10,7 +10,7 @@ SETTINGS_PATH = os.path.join("data", "config_breakout.cfg")
 HIGHSCORE_PATH = os.path.join("data", "scores.txt")
 MAP_DIR = "naps"
 
-RECENT_HIT_RESET = 50
+RECENT_HIT_RESET = 10
 GAME_INTENSIFYING_CONSTANT = 1.02
 PADDLE_VEL = 500
 PADDLE_FRICTION = 3
@@ -92,9 +92,9 @@ DVOFFSET = 3 * BH
 scene_stack = []
 
 def ef(): pass
-def add_scene(scene): scene_stack.append(scene); #print(scene_stack)
-def pop_scene(): scene_stack.pop(); #print(scene_stack)
-def change_scene(scene): pop_scene(); add_scene(scene); #print(scene_stack)
+def add_scene(scene): scene_stack.append(scene); print(scene_stack)
+def pop_scene(): scene_stack.pop(); print(scene_stack)
+def change_scene(scene): pop_scene(); add_scene(scene); print(scene_stack)
 
 def main_loop():
     last_stack = []
