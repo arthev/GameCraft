@@ -72,15 +72,8 @@ class Menu_Scene(Scene):
                               HH + b_sur.get_height()))
 
 class Settings_Menu(Menu_Scene):
-    def save_settings(self):
-        current_settings = {'COLOUR':COLOUR,
-                            'up_button':up_button,
-                            'down_button':down_button,
-                            'left_button':left_button,
-                            'right_button':right_button,
-                            'pause_button':pause_button}
-        with open(str(SETTINGS_PATH), 'w') as settings_file:
-            json.dump(current_settings, settings_file)
+    def exit_settings(self):
+        save_settings()
         os.execl(sys.executable, sys.executable, *sys.argv)
 
     def set_key(self, specifier):
@@ -140,7 +133,7 @@ class Settings_Menu(Menu_Scene):
                        "surface":self.key_surface},
                    {"text":"Pause:", "func": self.set_key, "var":"pause_button",
                        "surface":self.key_surface},
-                   {"text":"Save Settings", "func": self.save_settings, "surface": None}]
+                   {"text":"Save Settings", "func": self.exit_settings, "surface": None}]
         Menu_Scene.__init__(self, options)
 
 class Main_Menu(Menu_Scene):

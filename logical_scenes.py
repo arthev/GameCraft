@@ -50,6 +50,7 @@ class Game_Scene(Scene):
             self.r = BH//4
             self.starting_pos()
             self.create_surface()
+            self.destroys_all = False
 
         def create_surface(self):
             new = pygame.Surface( (2*self.r, 2*self.r) )
@@ -60,7 +61,7 @@ class Game_Scene(Scene):
         def starting_pos(self):
             self.x = HW - self.r
             self.y = SCREEN_SIZE[1] - BH - self.r
-            self.vel = Vector2(0, 150)
+            self.vel = Vector2(0, BALL_START_VEL)
             self.recent_hit = 0
 
         def move(self, time_passed, paddle, bmap): 
@@ -78,11 +79,16 @@ class Game_Scene(Scene):
 
             def paddle_collision_handler():
                 def simple_check():
-                    if self.y + self.r < SCREEN_SIZE[1] - paddle.h:
-                        return False
-                    if self.x + self.r < paddle.x or self.x - self.r > paddle.x + paddle.w:
-                        return False
-                    return True
+#                    if self.y + self.r < SCREEN_SIZE[1] - paddle.h:
+ #                       return False
+  #                  if self.x + self.r < paddle.x or self.x - self.r > paddle.x + paddle.w:
+   #                     return False
+    #                return True
+                    x_lower = self.x < paddle.x + paddle.w
+                    x_higher = self.x + self.r > paddle.x
+                    y_lower = self.y < paddle.y + paddle.h
+                    y_higher = self.y + self.r > paddle.y
+                    return x_lower and x_higher and y_lower and y_higher
                 def paddle_collision():
                     steps = paddle.w + self.r
                     extreme = 1.12
@@ -278,15 +284,21 @@ class Game_Scene(Scene):
         effects["extra_life"] = extra_life
         effects["death_up"] = death_up
 
+
+        tableaux = [(5, "extra_life"), (35, "death_up"),
+                (60, "shrink_ball"), (80, "shrink_paddle"),
+                (90, "enlarge_ball"), (100, "enlarge_paddle")]
         def __init__(self, x, y, paddle, ball, game):
-            self.x = x
+            self.x = x*BW + BW//2 - self.ps//2
             self.y = y
             self.paddle = paddle
             self.ball = ball
             self.game = game
             indicator = random.randint(1, 100)
-            if indicator >= 1 and indicator <= 100:
-                self.type = "death_up"
+            for e in self.tableaux:
+                if indicator <= e[0]:
+                    self.type = e[1]
+                    break
 
         def move(self):
             self.y += 4
@@ -295,6 +307,7 @@ class Game_Scene(Scene):
                     #collision!
                     self.y += 1000 #This will make the game update destruct the powerup in the next frame
                     self.effects[self.type](self)
+                    self.game.add_score(30)
 
         def draw(self):
             screen.blit(self.surfaci[self.type], (self.x, self.y))
@@ -389,10 +402,11 @@ class Game_Scene(Scene):
                 self.powerups.pop(i)
         collided_brick = self.ball.move(time_passed, self.paddle, self.bmap)
         if collided_brick:
+            self.brick_hit_handler(collided_brick)
             #TODO: implement better handling here
-            bx, by = collided_brick
-            self.bmap[bx][by] = 0
-            self.score += 10
+            #bx, by = collided_brick
+            #self.bmap[bx][by] = 0
+            #self.score += 10
         death = self.ball.death()
         if death or suicide:
             self.die()
@@ -408,10 +422,41 @@ class Game_Scene(Scene):
             self.set_life_surface()
             self.powerups = []
 
+    def brick_hit_handler(self, brick):
+        bx, by = brick
+        v = self.bmap[bx][by]
+        destroyed = False
+        extra_score = 0
+        if v == 1:
+            if self.ball.destroys_all:
+                destroyed = True
+                extra_score += 25
+        elif v == 3:
+            if self.ball.destroys_all:
+                destroyed = True
+                extra_score += 15
+            else:
+                extra_score += 5
+                self.bmap[bx][by] = 2
+        else:
+            destroyed = True
+            extra_score += 10
+        if destroyed:
+            self.bmap[bx][by] = 0
+            self.maybe_spawn_powerup(bx, by)
+        self.add_score(extra_score)
+
+    def add_score(self, bonus):
+        self.score += round(bonus * (BALL_START_VEL/100) * 64/PADDLE_START_WIDTH * 4/lives_setting)
+            
+    def maybe_spawn_powerup(self, bx, by):
+        if random.random() < POWERUP_CHANCE:
+            self.powerups.append(self.Powerup(bx, by, self.paddle, self.ball, self))
+
     def board_won(self):
         for x in self.bmap:
             for y, e in enumerate(self.bmap[x]):
-                if e != 0:
+                if not (e == 0 or e == 1):
                     return
         #If execution goes here, the board's clear.
         fn = os.path.join(MAP_DIR, str(self.level + 1) + ".abrm")

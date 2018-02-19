@@ -63,6 +63,10 @@ l_sur = bfo_sur.copy()
 l_sur.blit(f_tex, (BW//2 - f_tex.get_width()//2, VOFFSET*BH//2 - f_tex.get_height()//2))
 l_sur = l_sur.convert()
 
+f_tex = global_font.render("N", False, COLOUR)
+n_sur = bfo_sur.copy()
+n_sur.blit(f_tex, (BW//2 - f_tex.get_width()//2, VOFFSET*BH//2 - f_tex.get_height()//2))
+n_sur = n_sur.convert()
 
 
 while True:
@@ -100,6 +104,9 @@ while True:
         else:
             if x == 0: save_file()
             elif x==1: open_file()
+            elif x==2:
+                bmap = {i:[0 for j in range(SCREEN_SIZE[1]//BH)] for i in range(SCREEN_SIZE[0]//BW)}
+
 
     if press_key:
         bmap[x][y] = press_value
@@ -116,5 +123,6 @@ while True:
                     (i*BW, (j+VOFFSET)*BH))
     screen.blit(s_sur, (0, 0))
     screen.blit(l_sur, (BW,0))
+    screen.blit(n_sur, (2*BW, 0))
 
     pygame.display.update()

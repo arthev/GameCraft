@@ -15,6 +15,11 @@ GAME_INTENSIFYING_CONSTANT = 1.02
 PADDLE_VEL = 500
 PADDLE_FRICTION = 3
 COLOUR = AMBER
+POWERUP_CHANCE = 0.4
+BALL_START_VEL = 250
+PADDLE_START_WIDTH = 64
+unlocked_level = 1
+starting_level = 1
 up_button = pygame.K_UP
 left_button = pygame.K_LEFT
 down_button = pygame.K_DOWN
@@ -22,7 +27,7 @@ right_button = pygame.K_RIGHT
 pause_button = pygame.K_p
 suicide_button = pygame.K_k
 fps = 60
-lives_setting = 2
+lives_setting = 4
 
 
 high_scores = {1:{"name":None, "score":0},
@@ -34,6 +39,7 @@ high_scores = {1:{"name":None, "score":0},
 def include(filename):
     if os.path.exists(filename):
         exec(open(filename).read(), globals())
+
 def load_settings():
     if os.path.isfile(SETTINGS_PATH):
         with open(SETTINGS_PATH, 'r') as settings_file:
@@ -43,6 +49,23 @@ def load_settings():
     else:
         with open(SETTINGS_PATH, 'w') as settings_file:
             json.dump({}, settings_file) #Game has sane defaults.
+
+def save_settings():
+    current_settings = {"COLOUR":COLOUR,
+                        "up_button":up_button,
+                        "down_button":down_button,
+                        "left_button":left_button,
+                        "right_button":right_button,
+                        "pause_button":pause_button,
+                        "suicide_button":suicide_button,
+                        "BALL_START_VEL":BALL_START_VEL,
+                        "PADDLE_START_WIDTH":PADDLE_START_WIDTH,
+                        "lives_setting":lives_setting,
+                        "unlocked_level":unlocked_level,
+                        "starting_level":starting_level}
+    with open(str(SETTINGS_PATH), 'w') as settings_file:
+        json.dump(current_settings, settings_file)
+
 def load_highscore():
     if os.path.isfile(HIGHSCORE_PATH):
         with open(HIGHSCORE_PATH, 'r') as score_file:
