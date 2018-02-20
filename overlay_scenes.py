@@ -103,7 +103,7 @@ class Death_Animation(Overlay_Scene):
         else:
             pygame.time.wait(700)
             self.cont()
-        Overlay_Scene.__init__(self)
+        Overlay_Scene.update(self)
 
 
 class Splash_Screen(Overlay_Scene):
