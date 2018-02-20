@@ -1,10 +1,14 @@
 class Overlay_Scene(Scene):
-    def cont(self): pop_scene()
+    def cont(self): 
+        pop_scene()
+        try: self.clock.tick(fps)
+        except AttributeError: pass
 
-    def __init__(self):
+    def __init__(self, clock = None):
         self.background = pygame.Surface.copy(screen)
         self.overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
         pygame.draw.rect(self.overlay, (0, 0, 0, 205), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+        self.clock = clock
 
     def draw(self):
         screen.blit(self.background, (0, 0))
@@ -84,17 +88,23 @@ class Game_Won(Game_Over):
         screen.blit(text, (HW - text.get_width()//2,
                            HH + text.get_height()//2))
 
-class Die_Animation(Overlay_Scene):
-    def __init__(self):
+class Death_Animation(Overlay_Scene):
+    def __init__(self, clock):
         self.i = 0
-        Overlay_Scene.__init__(self)
-        self.overlay.set_alpha(self.i)
+        Overlay_Scene.__init__(self, clock)
+        new_overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+
+        pygame.draw.rect(new_overlay, (0, 0, 0, self.i), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+        self.overlay = new_overlay.convert_alpha()
 
     def update(self):
-        if self.i < 256:
+        if self.i < 255:
             self.i += 1
-            self.overlay.set_alpha(self.i)
+
+            pygame.draw.rect(self.overlay, (0, 0, 0, self.i), (0, 0, SCREEN_SIZE[0], SCREEN_SIZE[1]))
+            pygame.time.wait(3)
         else:
+            pygame.time.wait(700)
             self.cont()
 
 

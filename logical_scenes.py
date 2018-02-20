@@ -316,7 +316,7 @@ class Game_Scene(Scene):
             screen.blit(self.surfaci[self.type], (self.x, self.y))
 #"-------------------------------------------------------------------"
     def goto_pause(self):
-        add_scene(Pause())
+        add_scene(Pause(self.clock))
 
     def load_level(self):
         fn = os.path.join(MAP_DIR, str(self.level)+".abrm")
@@ -384,6 +384,7 @@ class Game_Scene(Scene):
 
 
     def update(self):
+        self.just_died = False
         time_passed =  self.clock.tick(fps) / 1000.0 #in seconds
         suicide = False
 
@@ -417,6 +418,7 @@ class Game_Scene(Scene):
         self.board_won()
 
     def die(self):
+        self.just_died = True
         self.lives -= 1
         if self.lives < 0:
             self.game_over()
@@ -425,6 +427,7 @@ class Game_Scene(Scene):
             self.paddle = self.Paddle()
             self.set_life_surface()
             self.powerups = []
+            add_scene(Death_Animation(self.clock))
 
     def brick_hit_handler(self, brick):
         bx, by = brick
@@ -483,6 +486,7 @@ class Game_Scene(Scene):
         change_scene(Game_Over(self.score))
 
     def draw(self):
+        if self.just_died: return
         screen.fill(BLACK)
 
         screen.blit(self.l_sur,
