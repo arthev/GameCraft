@@ -50,7 +50,7 @@ class Game_Scene(Scene):
             self.r = BH//4
             self.starting_pos()
             self.create_surface()
-            self.destroys_all = False
+            self.ghost_ball = False
 
         def create_surface(self):
             new = pygame.Surface( (2*self.r, 2*self.r) )
@@ -66,6 +66,9 @@ class Game_Scene(Scene):
 
         def shoot(self):
             self.shot = True
+
+        def ghost_ballify(self):
+            self.ghost_ball = True
 
         def move(self, time_passed, paddle, bmap): 
             #Returns (x, y) for collided-with brick (or None)
@@ -119,34 +122,41 @@ class Game_Scene(Scene):
                 def y2y(y): return min(int(y//BH) - VOFFSET, len(bmap[0]) - 1)
                 gx = x2x(self.x)
                 gy = y2y(self.y)
-                
+                to_return = None
+                reverse_x = False
+                reverse_y = False
                 if bmap[gx][gy] != 0:
-                    if random.random() < 0.5:
-                        self.vel.x *= -1
+                    if random.random() < 0.1:
+                        reverse_x = True
                     else:
-                        self.vel.y *= -1
-                    return (gx, gy)
-                if self.vel.x > 0:
+                        reverse_y = True
+                    to_return = (gx, gy)
+                elif self.vel.x > 0:
                     dx = x2x(self.x + self.r)
                     if dx != gx and bmap[dx][gy] != 0:
-                        self.vel.x *= -1
-                        return (dx, gy)
-                if self.vel.x < 0:
+                        reverse_x = True
+                        to_return = (dx, gy)
+                elif self.vel.x < 0:
                     dx = x2x(self.x - self.r)
                     if dx != gx and bmap[dx][gy] != 0:
-                        self.vel.x *= -1
-                        return (dx, gy)
-                if self.vel.y > 0:
+                        reverse_x = True
+                        to_return = (dx, gy)
+                elif self.vel.y > 0:
                     dy = y2y(self.y + self.r)
                     if dy != gy and bmap[gx][dy] != 0:
-                        self.vel.y *= -1
-                        return (gx, dy)
-                if self.vel.y < 0:
+                        reverse_y = True
+                        to_return = (gx, dy)
+                elif self.vel.y < 0:
                     dy = y2y(self.y - self.r)
                     if dy != gy and bmap[gx][dy] != 0:
+                        reverse_y = True
+                        to_return = (gx, dy)
+                if not self.ghost_ball:
+                    if reverse_x:
+                        self.vel.x *= -1
+                    if reverse_y:
                         self.vel.y *= -1
-                        return (gx, dy)
-                return None
+                return to_return
 
             if not self.shot:
                 self.x = paddle.x + paddle.w//2
@@ -201,13 +211,15 @@ class Game_Scene(Scene):
             self.game.set_life_surface()
         def death_up(self):
             self.game.die()
+        def ghost_ball(self):
+            self.ball.ghost_ballify()
 
 
         surfaci = {}
         ps = BW//2
         base_sur = pygame.Surface( (ps, ps) )
         base_sur.fill(BLACK)
-        pygame.draw.rect(base_sur, COLOUR, (0, 0, ps, ps), 2)
+        pygame.draw.rect(base_sur, COLOUR, (0, 0, ps, ps), ps//16)
 
         e_sur = base_sur.copy()
         pygame.draw.polygon(e_sur, COLOUR,
@@ -283,6 +295,16 @@ class Game_Scene(Scene):
         d_sur = d_sur.convert()
         surfaci["death_up"] = d_sur
 
+        g_sur = base_sur.copy()
+        pygame.draw.circle(g_sur, COLOUR,
+                (ps//2, ps//2), ps//3)
+        pygame.draw.rect(g_sur, BLACK,
+                (ps//16, ps//16, ps//2, 15*ps//16))
+        pygame.draw.line(g_sur, COLOUR, 
+                (ps//2, 0), (ps//2, ps), ps//16)
+        g_sur = g_sur.convert()
+        surfaci["ghost_ball"] = g_sur
+
 
         effects = {}
         effects["enlarge_paddle"] = enlarge_paddle
@@ -291,11 +313,13 @@ class Game_Scene(Scene):
         effects["shrink_ball"] = shrink_ball
         effects["extra_life"] = extra_life
         effects["death_up"] = death_up
+        effects["ghost_ball"] = ghost_ball
 
 
-        tableaux = [(5, "extra_life"), (35, "death_up"),
-                (60, "shrink_ball"), (80, "shrink_paddle"),
-                (90, "enlarge_ball"), (100, "enlarge_paddle")]
+        tableaux = [(5, "extra_life"), (15, "death_up"),
+                (40, "shrink_ball"), (65, "shrink_paddle"),
+                (80, "enlarge_ball"), (95, "enlarge_paddle"),
+                (100, "ghost_ball")]
         def __init__(self, x, y, paddle, ball, game):
             self.x = x*BW + BW//2 - self.ps//2
             self.y = y
@@ -406,7 +430,7 @@ class Game_Scene(Scene):
                 elif event.key == suicide_button:
                     suicide = True
                 elif event.key == pygame.K_w:
-                    self.bmap = {i:[0 for j in range(SCREEN_SIZE[1]//BH)] for i in range(SCREEN_SIZE[0]//BW)}
+                    self.ball.ghost_ballify()
 
         self.paddle.move(time_passed)
         for p in self.powerups:
@@ -440,11 +464,11 @@ class Game_Scene(Scene):
         destroyed = False
         extra_score = 0
         if v == 1:
-            if self.ball.destroys_all:
+            if self.ball.ghost_ball:
                 destroyed = True
                 extra_score += 25
         elif v == 3:
-            if self.ball.destroys_all:
+            if self.ball.ghost_ball:
                 destroyed = True
                 extra_score += 15
             else:
