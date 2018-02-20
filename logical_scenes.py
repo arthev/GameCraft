@@ -125,32 +125,47 @@ class Game_Scene(Scene):
                 to_return = None
                 reverse_x = False
                 reverse_y = False
+                #Handle adjacents
                 if bmap[gx][gy] != 0:
                     if random.random() < 0.1:
                         reverse_x = True
                     else:
                         reverse_y = True
                     to_return = (gx, gy)
-                elif self.vel.x > 0:
+                if self.vel.x > 0 and not to_return:
                     dx = x2x(self.x + self.r)
                     if dx != gx and bmap[dx][gy] != 0:
                         reverse_x = True
                         to_return = (dx, gy)
-                elif self.vel.x < 0:
+                if self.vel.x < 0 and not to_return: 
                     dx = x2x(self.x - self.r)
                     if dx != gx and bmap[dx][gy] != 0:
                         reverse_x = True
                         to_return = (dx, gy)
-                elif self.vel.y > 0:
+                if self.vel.y > 0 and not to_return:
                     dy = y2y(self.y + self.r)
                     if dy != gy and bmap[gx][dy] != 0:
                         reverse_y = True
                         to_return = (gx, dy)
-                elif self.vel.y < 0:
+                if self.vel.y < 0 and not to_return:
                     dy = y2y(self.y - self.r)
                     if dy != gy and bmap[gx][dy] != 0:
                         reverse_y = True
                         to_return = (gx, dy)
+                #No adjacents? Let's check for diagonals.
+                if to_return == None:
+                    d = math.sqrt(2*self.r**2)/2
+                    if self.vel.x > 0: xdir = 1
+                    else: xdir = -1
+                    if self.vel.y > 0: ydir = 1
+                    else: ydir = -1
+
+                    if x2x(self.x + d*xdir) == gx + xdir and y2y(self.y + d*ydir) == gy + ydir:
+                        if bmap[gx+xdir][gy+ydir] != 0:
+                           reverse_x = True
+                           reverse_y = True
+                           to_return = (gx + xdir, gy + ydir)
+
                 if not self.ghost_ball:
                     if reverse_x:
                         self.vel.x *= -1
