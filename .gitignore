@@ -1,2 +1,4 @@
 __pycache__
 screenshots/
+data/config_breakout.cfg
+data/scores.txt
