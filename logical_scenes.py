@@ -85,11 +85,6 @@ class Game_Scene(Scene):
 
             def paddle_collision_handler():
                 def simple_check():
-#                    if self.y + self.r < SCREEN_SIZE[1] - paddle.h:
- #                       return False
-  #                  if self.x + self.r < paddle.x or self.x - self.r > paddle.x + paddle.w:
-   #                     return False
-    #                return True
                     x_lower = self.x < paddle.x + paddle.w
                     x_higher = self.x + self.r > paddle.x
                     y_lower = self.y < paddle.y + paddle.h
@@ -108,14 +103,10 @@ class Game_Scene(Scene):
                     newVec.normalize()
                     newVec = newVec * mag
                     self.vel = newVec
-
-                    #Trying to set it above the paddle as well, and then maybe get rid of RECENT_HIT_RESET.
                     self.y = paddle.y - self.r
 
                 if simple_check():
-#                    if self.recent_hit <= 0:
                     paddle_collision()
-                    #    self.recent_hit = RECENT_HIT_RESET
 
             def brick_collision_handler():
                 def x2x(x): return min(int(x//BW), max(bmap))
@@ -449,8 +440,6 @@ class Game_Scene(Scene):
                     self.ball.shoot()
                 elif event.key == suicide_button:
                     suicide = True
-                elif event.key == pygame.K_w:
-                    self.ball.ghost_ballify()
 
         self.paddle.move(time_passed)
         for p in self.powerups:

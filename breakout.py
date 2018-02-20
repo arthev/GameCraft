@@ -94,9 +94,9 @@ DVOFFSET = 3 * BH
 scene_stack = []
 
 def ef(): pass
-def add_scene(scene): scene_stack.append(scene); print(scene_stack)
-def pop_scene(): scene_stack.pop(); print(scene_stack)
-def change_scene(scene): pop_scene(); add_scene(scene); print(scene_stack)
+def add_scene(scene): scene_stack.append(scene); #print(scene_stack)
+def pop_scene(): scene_stack.pop(); #print(scene_stack)
+def change_scene(scene): pop_scene(); add_scene(scene); #print(scene_stack)
 
 def main_loop():
     last_stack = []
@@ -113,5 +113,4 @@ if __name__ == '__main__':
     load_highscore()
     add_scene(Main_Menu())
     add_scene(Splash_Screen())
-    #add_scene(Game_Scene())
     main_loop()
