@@ -147,6 +147,8 @@ class Settings_Menu(Menu_Scene):
                        "surface":self.key_surface},
                    {"text":"Right:", "func": self.set_key, "var":"right_button",
                        "surface":self.key_surface},
+                   {"text":"Shoot ball:", "func": self.set_key, "var":"shoot_button",
+                       "surface":self.key_surface},
                    {"text":"Pause:", "func": self.set_key, "var":"pause_button",
                        "surface":self.key_surface},
                    {"text":"Suicide:", "func": self.set_key, "var":"suicide_button",

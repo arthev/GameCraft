@@ -62,7 +62,10 @@ class Game_Scene(Scene):
             self.x = HW - self.r
             self.y = SCREEN_SIZE[1] - BH - self.r
             self.vel = Vector2(0, BALL_START_VEL)
-#            self.recent_hit = 0
+            self.shot = False
+
+        def shoot(self):
+            self.shot = True
 
         def move(self, time_passed, paddle, bmap): 
             #Returns (x, y) for collided-with brick (or None)
@@ -145,7 +148,9 @@ class Game_Scene(Scene):
                         return (gx, dy)
                 return None
 
-#            self.recent_hit -= 1
+            if not self.shot:
+                self.x = paddle.x + paddle.w//2
+                return None
             self.x += self.vel.x * time_passed
             self.y += self.vel.y * time_passed
             check_screen_boundaries()
@@ -396,8 +401,8 @@ class Game_Scene(Scene):
                     exit()
                 elif event.key == pause_button:
                     self.goto_pause()
-                elif event.key == pygame.K_SPACE:
-                    self.powerups.append(self.Powerup(HW, HH, self.paddle, self.ball, self))
+                elif event.key == shoot_button:
+                    self.ball.shoot()
                 elif event.key == suicide_button:
                     suicide = True
                 elif event.key == pygame.K_w:
@@ -475,6 +480,7 @@ class Game_Scene(Scene):
             change_scene(Game_Won(self.score))
 
     def game_over(self):
+        self.just_died = False #To permit drawing lol
         N = 6
         if N % 2 == 0: N += 1
         for i in range(N):

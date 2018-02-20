@@ -24,6 +24,7 @@ up_button = pygame.K_UP
 left_button = pygame.K_LEFT
 down_button = pygame.K_DOWN
 right_button = pygame.K_RIGHT
+shoot_button = pygame.K_SPACE
 pause_button = pygame.K_p
 suicide_button = pygame.K_k
 fps = 60
@@ -56,6 +57,7 @@ def save_settings():
                         "down_button":down_button,
                         "left_button":left_button,
                         "right_button":right_button,
+                        "shoot_button":shoot_button,
                         "pause_button":pause_button,
                         "suicide_button":suicide_button,
                         "BALL_START_VEL":BALL_START_VEL,
