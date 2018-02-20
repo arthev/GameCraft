@@ -13,12 +13,12 @@ class Menu_Scene(Scene):
         self.options = options
 
     def get_select_up(self, from_index=None) -> int:
-        if not from_index: i = self.selection
+        if from_index == None: i = self.selection
         else: i = from_index
         if i == 0: return len(self.options) - 1
         else: return i - 1
     def get_select_down(self, from_index=None) -> int:
-        if not from_index: i = self.selection
+        if from_index == None: i = self.selection
         else: i = from_index
         if i == len(self.options) - 1: return 0
         else: return i + 1
@@ -71,6 +71,19 @@ class Menu_Scene(Scene):
         screen.blit(b_sur, (HW - b_sur.get_width()//2,
                               HH + b_sur.get_height()))
 
+        aa_sur = self.get_base_surface(self.options[self.get_select_up(self.get_select_up())])
+        aa_sur = pygame.transform.smoothscale(aa_sur, (round(aa_sur.get_width()*MENU_DWINDLE*MENU_DWINDLE),
+                                                      round(aa_sur.get_height()*MENU_DWINDLE*MENU_DWINDLE)))
+        screen.blit(aa_sur, (HW - aa_sur.get_width()//2,
+                             HH - a_sur.get_height() * 2 - aa_sur.get_height() * 2))
+
+        bb_sur = self.get_base_surface(self.options[self.get_select_down(self.get_select_down())])
+        bb_sur = pygame.transform.smoothscale(bb_sur, (round(bb_sur.get_width()*MENU_DWINDLE*MENU_DWINDLE),
+                                                      round(bb_sur.get_height()*MENU_DWINDLE*MENU_DWINDLE)))
+        screen.blit(aa_sur, (HW - aa_sur.get_width()//2,
+                             HH + b_sur.get_height() * 2 + bb_sur.get_height()))
+
+   
 
     def arrow_surface(self, msg):
         text = gfont.render(msg, False, COLOUR).convert_alpha()
