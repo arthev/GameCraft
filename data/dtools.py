@@ -5,6 +5,32 @@ from . import settings
 standard_font = pygame.font.SysFont("Mono", constants.SCREEN_SIZE[0]//20, bold=True)
 
 def text(msg):
+    """Returns a surface of a simple text msg"""
     return standard_font.render(msg, False, settings.COLOUR).convert_alpha()
+
+
+def arrow_surface(self, msg):
+    """Returns a surface of a text msg with <> to the left"""
+    t_sur = text(msg)
+
+    h = t_sur.get_height()*0.75//1
+
+    arrows = pygame.Surface( (h, h) )
+    arrows.fill(BLACK)
+
+    pygame.draw.polygon(arrows, COLOUR,
+            ( (0, h//2), (h//2 - h//8, h//4), (h//2 - h//8, 3*h//4) ) )
+    pygame.draw.polygon(arrows, COLOUR,
+            ( (h, h//2), (h//2 + h//8, h//4), (h//2 + h//8, 3*h//4) ) )
+
+    c_sur = pygame.Surface((t_sur.get_width() + arrows.get_width() + h//4,
+        t_sur.get_height()))
+    c_sur.fill(BLACK)
+    c_sur.blit(arrows, (0, h//8))
+    c_sur.blit(t_sur, (arrows.get_width() + h//4, 0))
+    c_sur.convert_alpha()
+    return c_sur
+
+
 
 

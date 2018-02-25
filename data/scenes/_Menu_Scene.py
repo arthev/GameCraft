@@ -28,16 +28,16 @@ class _Menu_Scene(_Scene):
         self.selection = self.get_select_down()
 
     def select_right(self):
-        #TODO
-        pass
+        cur = self.options[self.selection]
+        if "right" in cur: cur["right"]()
     def select_left(self):
-        #TODO
-        pass
+        cur = self.options[self.selection]
+        if "left" in cur: cur["left"]()
 
     def call_selected(self):
-        #TODO
-        pass
-
+        cur = self.options[self.selection]
+        if "var" in cur: cur["func"](cur)
+        else: cur["func"]()
 
     def handle_event(self, event):
         dispatch = {settings.up_button: self.select_up,
@@ -48,9 +48,6 @@ class _Menu_Scene(_Scene):
         if event.type == pg.KEYDOWN:
             if event.key in dispatch:
                 dispatch[event.key]()
-
-
-
 
     def get_option_surface(self, opt):
         if "surface" not in opt or not opt["surface"]: return dtools.text(opt["text"])
