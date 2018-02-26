@@ -50,6 +50,10 @@ def circle(surface, pos, radius):
     pygame.draw.circle(surface, settings.COLOUR,
             pos, radius)
 
+def dtext(surface, msg, pos):
+    t_sur = text(str(msg))
+    pos = pos[0] - t_sur.get_width()//2, pos[1] - t_sur.get_height()//2
+    surface.blit(t_sur, pos)
 
 
 

@@ -1,1 +1,3 @@
-*_pycache__
+data/__pycache__
+data/scenes/__pycache__
+data/scenes/game/__pycache__
