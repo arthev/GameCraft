@@ -43,7 +43,10 @@ class Driver(object):
                 self.current_scene.handle_event(event)
 
     def update(self, delay):
-        pass
+        try:
+            self.current_scene.update(delay)
+        except TypeError:
+            self.current_scene.update()
 
     def draw(self):
         self.current_scene.draw(self.screen)

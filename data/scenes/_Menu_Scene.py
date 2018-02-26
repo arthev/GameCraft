@@ -17,10 +17,10 @@ class _Menu_Scene(_Scene):
         self.options = options
 
     def get_select_up(self, from_i=None) -> int:
-        i = self.selection if from_i == None else from_i
+        i = self.selection if from_i is None else from_i
         return len(self.options) -  1 if i == 0 else i - 1
     def get_select_down(self, from_i=None) -> int:
-        i = self.selection if from_i == None else from_i
+        i = self.selection if from_i is None else from_i
         return 0 if i == len(self.options) - 1 else i + 1
     def select_up(self):
         self.selection = self.get_select_up()

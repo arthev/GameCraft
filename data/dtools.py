@@ -1,6 +1,7 @@
 import pygame
 from . import constants
 from . import settings
+from .scenes.game.Vector2 import Vector2
 
 standard_font = pygame.font.SysFont("Mono", constants.SCREEN_SIZE[0]//20, bold=True)
 
@@ -30,6 +31,28 @@ def arrow_surface(self, msg):
     c_sur.blit(t_sur, (arrows.get_width() + h//4, 0))
     c_sur.convert_alpha()
     return c_sur
+
+def line2(surface, start, end):
+    def extract(pair):
+        if isinstance(pair, Vector2): 
+            return pair.x, pair.y
+        elif isinstance(pair, tuple):
+            return tuple
+        elif isinstance(pair, list):
+            return list[0], list[1]
+    start = extract(start)
+    end = extract(end)
+
+    pygame.draw.line(surface, settings.COLOUR,
+            start, end, 2)
+
+def circle(surface, pos, radius):
+    pygame.draw.circle(surface, settings.COLOUR,
+            pos, radius)
+
+
+
+
 
 
 
