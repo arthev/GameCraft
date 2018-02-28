@@ -59,8 +59,9 @@ class Game_Scene(_Scene):
         self.wave = wave
     
     def handle_event(self, event):
-        if event.type == pg.MOUSEBUTTONDOWN:
-            bases = {base: base.get_distance(Aim.get_pos()) for base in self.bases}
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            active_bases = [base for base in self.bases if base.missiles > 0]
+            bases = {base: base.get_distance(Aim.get_pos()) for base in active_bases}
             missile = min(bases, key=bases.get).shoot_missile(Aim.get_pos())
             self.missiles.append(missile)
 

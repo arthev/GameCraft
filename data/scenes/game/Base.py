@@ -12,8 +12,9 @@ class Base(object):
         self.missiles = RESET_MISSILES
 
     def draw(self, screen):
-#        dtools.dtext(screen, self.missiles, (self.x, self.y))
         dtools.draw_base(screen, (self.x, self.y))
+        dtools.draw_missile_num(screen, (self.x, self.y), self.missiles)
+
     def get_distance(self, pos):
         return math.sqrt( (pos[0] - self.x)**2 +
                           (pos[1] - self.y)**2 )

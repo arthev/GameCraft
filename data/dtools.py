@@ -70,6 +70,13 @@ def draw_base(surface, pos):
              (pos[0]+BW//4, pos[1]-BH),
              (pos[0]+BW//2, pos[1])])
 
+def draw_missile_num(surface, pos, num):
+    t_sur = standard_font.render(str(num), False, BLACK).convert_alpha()
+    surface.blit(t_sur, (pos[0] - t_sur.get_width()//2,
+        SZ[1] - t_sur.get_height()*0.8//1))
+
+
+
 
 
 def create_city_surface():
