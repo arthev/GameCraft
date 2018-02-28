@@ -4,14 +4,22 @@ from .Vector2 import Vector2
 from ... import constants
 from ... import dtools
 
-
 class Bomb(object):
-    def __init__(self, potential_targets, magnitude=1):
+    def get_magnitude(self, wave):
+        if random.random() < 0.5:
+            return 1
+        if random.random() < 0.5:
+            return max(1.2, random.randint(0, wave)/10)
+        if random.random() < 0.5:
+            return 3
+        return max(1, random.randint(0, 100*wave)/300)
+
+    def __init__(self, potential_targets, wave):
         self.target = random.choice(potential_targets)
         self.target_pos = self.target.get_coords()
         self.start = Vector2(random.randint(0, constants.SCREEN_SIZE[0]), constants.VOFFSET)
         self.pos = Vector2(self.start.x, self.start.y)
-        self.magnitude = magnitude
+        self.magnitude = self.get_magnitude(wave)
         self.angle = self.target_pos - self.start
         self.angle.normalize()
         self.done = False

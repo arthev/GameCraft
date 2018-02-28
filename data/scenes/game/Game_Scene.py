@@ -8,6 +8,7 @@ from .Bomb import Bomb
 from .Aim import Aim
 from ..._Scene import _Scene
 from ...Scene_Stack import Scene_Stack
+from ..Pause import Pause
 from ... import settings
 from ... import constants
 from ... import dtools
@@ -18,6 +19,9 @@ SZ = constants.SCREEN_SIZE
 HW = SZ[0]//2
 
 MISSILE_REACH = 400
+
+MAX_DELAY = 2500
+MIN_DELAY = 200
 
 
 BOMB_POINTS = 25
@@ -49,6 +53,10 @@ class Game_Scene(_Scene):
     def get_multiplier(self):
         return min(6, (self.wave+1)//2)
 
+    def get_bomb_num(self):
+        return 100
+        return min(30, max(4, self.wave*2))
+
     def __init__(self, score=0, wave=1):
         self.missiles = []
         self.explosions = []
@@ -57,15 +65,30 @@ class Game_Scene(_Scene):
         self.bombs = []
         self.score = score
         self.wave = wave
-    
+        self.to_bomb = [Bomb(self.bases + self.cities, self.wave) for i in range(self.get_bomb_num())]
+        self.delay = random.randint(500, 2000)/1000
+        self.bombs_clear = False
+
+
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             active_bases = [base for base in self.bases if base.missiles > 0]
             bases = {base: base.get_distance(Aim.get_pos()) for base in active_bases}
             missile = min(bases, key=bases.get).shoot_missile(Aim.get_pos())
             self.missiles.append(missile)
+        elif event.type == pg.KEYDOWN and event.key == settings.pause_button:
+            Scene_Stack.add_scene(Pause())
 
-    def update(self):
+    def update(self, time_passed):
+        self.delay -= time_passed
+        if self.delay < 0 and not self.bombs_clear:
+            self.delay = random.randint(MIN_DELAY, MAX_DELAY)
+            try:
+                self.bombs.append(self.to_bomb.pop())
+            except IndexError:
+                self.bombs_clear = True
+                print("Okay, bombs clear.")
+
         Aim.update()
         for missile in self.missiles: missile.update()
         for i in range(len(self.missiles) - 1, -1, -1):
@@ -76,8 +99,6 @@ class Game_Scene(_Scene):
         for i in range(len(self.explosions) -1, -1, -1):
             if self.explosions[i].done:
                 self.explosions.pop(i)
-        if random.random() < 0.01:
-            self.bombs.append(Bomb(self.bases + self.cities))
         for bomb in self.bombs: bomb.update(self.explosions)
         for i in range(len(self.bombs) -1, -1, -1):
             if self.bombs[i].done:
