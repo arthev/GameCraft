@@ -6,9 +6,10 @@ from .Base import Base
 from .City import City
 from .Bomb import Bomb
 from .Aim import Aim
+from .Game_Over import Game_Over
+from ..Pause import Pause
 from ..._Scene import _Scene
 from ...Scene_Stack import Scene_Stack
-from ..Pause import Pause
 from ... import settings
 from ... import constants
 from ... import dtools
@@ -38,14 +39,7 @@ CITY_COORDS = [(3*SZ[0]//20, PH),
                (15*SZ[0]//20,PH),
                (17*SZ[0]//20,PH)]
 
-def create_game_background():
-    bg = pg.Surface( SZ )
-    bg.fill(BLACK)
-    pg.draw.line(bg, COLOUR, (0, constants.VOFFSET), (SZ[0], constants.VOFFSET), 2)
-    pg.draw.rect(bg, COLOUR, (0, 77*SZ[1]//80, SZ[0], SZ[1]))
-
-    return bg.convert()
-game_background = create_game_background()
+game_background = dtools.create_game_background()
 
 def ef(): pass
 
@@ -54,7 +48,6 @@ class Game_Scene(_Scene):
         return min(6, (self.wave+1)//2)
 
     def get_bomb_num(self):
-        return 100
         return min(30, max(4, self.wave*2))
 
     def __init__(self, score=0, wave=1):
@@ -74,8 +67,11 @@ class Game_Scene(_Scene):
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             active_bases = [base for base in self.bases if base.missiles > 0]
             bases = {base: base.get_distance(Aim.get_pos()) for base in active_bases}
-            missile = min(bases, key=bases.get).shoot_missile(Aim.get_pos())
-            self.missiles.append(missile)
+            try:
+                missile = min(bases, key=bases.get).shoot_missile(Aim.get_pos())
+                self.missiles.append(missile)
+            except ValueError:
+                pass
         elif event.type == pg.KEYDOWN and event.key == settings.pause_button:
             Scene_Stack.add_scene(Pause())
 
@@ -112,7 +108,12 @@ class Game_Scene(_Scene):
                 else:
                     self.score += BOMB_POINTS * self.get_multiplier()
 
-                
+        #Let's check for game state changes, heh.
+        active_bases = [base for base in self.bases if base.missiles > 0]
+        if not active_bases:
+            #game over
+            #TODO: The check here is actually harder: Must be impossible to remove all the bombs with the missiles already in flight, so the check needs a redo.
+            Scene_Stack.change_scene(Game_Over(self.bases + self.cities, self.bombs, self.score))
 
 
 

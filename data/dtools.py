@@ -144,6 +144,12 @@ def mouse(screen, pos):
                      pos[1] - ms.get_height()//2))
 
 
+def create_game_background():
+    bg = pg.Surface( SZ )
+    bg.fill(BLACK)
+    pg.draw.line(bg, settings.COLOUR, (0, constants.VOFFSET), (SZ[0], constants.VOFFSET), 2)
+    pg.draw.rect(bg, settings.COLOUR, (0, 77*SZ[1]//80, SZ[0], SZ[1]))
+    return bg.convert()
 
 
 
