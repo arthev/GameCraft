@@ -50,11 +50,11 @@ class Game_Scene(_Scene):
     def get_bomb_num(self):
         return min(30, max(4, self.wave*2))
 
-    def __init__(self, score=0, wave=1):
+    def __init__(self, score=0, wave=1, cities=[City(pos) for pos in CITY_COORDS]):
         self.missiles = []
         self.explosions = []
         self.bases = [Base(pos) for pos in BASE_COORDS]
-        self.cities = [City(pos) for pos in CITY_COORDS]
+        self.cities = cities
         self.bombs = []
         self.score = score
         self.wave = wave
@@ -109,11 +109,13 @@ class Game_Scene(_Scene):
                     self.score += BOMB_POINTS * self.get_multiplier()
 
         #Let's check for game state changes, heh.
-        active_bases = [base for base in self.bases if base.missiles > 0]
-        if not active_bases:
+#        active_bases = [base for base in self.bases if base.missiles > 0]
+        if not self.cities:
             #game over
-            #TODO: The check here is actually harder: Must be impossible to remove all the bombs with the missiles already in flight, so the check needs a redo.
-            Scene_Stack.change_scene(Game_Over(self.bases + self.cities, self.bombs, self.score))
+            Scene_Stack.change_scene(Game_Over(self.bases, self.bombs, self.score))
+        if not self.to_bomb and not self.bombs and not self.explosions:
+            Scene_Stack.change_scene(self.__class__(self.score, self.wave + 1, self.cities))
+            #TODO
 
 
 
