@@ -2,6 +2,7 @@ import pygame as pg
 import random
 from .Bomb import Bomb
 from .Vector2 import Vector2
+from ..Highscore_Entry import Highscore_Entry
 from ..._Scene import _Scene
 from ...Scene_Stack import Scene_Stack
 from ... import dtools
@@ -49,19 +50,21 @@ class Game_Over(_Scene):
             self.bombs.append(Bomb(self.hubs, 100))
         if self.delay < 3000:
             self.bombs.append(Bomb(self.hubs, 100))
-
-
-
-
         if self.delay < 0:
             self.i += 3
             if self.i > 255: self.i = 255
             self.overlay.set_alpha(self.i)
         if self.i == 255:
             pg.time.wait(2000)
-            #TODO: Send to high score, hehe.
-            Scene_Stack.change_scene(Fade_Out(self.score))
+            self.cont()
         for bomb in self.bombs: bomb.update([])
+
+    def handle_event(self, event):
+        if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+            self.cont()
+
+    def cont(self):
+        Scene_Stack.change_scene(Fade_Out(self.score))
 
 
     def draw(self, screen):
@@ -75,7 +78,10 @@ class Game_Over(_Scene):
         screen.blit(self.overlay, (0, 0))
 
 
-class Fade_Out(_Scene):
+class Fade_Out(Game_Over):
+    def cont(self):
+        Scene_Stack.change_scene(Highscore_Entry(self.score))
+
     def __init__(self, score):
         self.score = score
         self.overlay = self.create_overlay()
@@ -92,13 +98,11 @@ class Fade_Out(_Scene):
     def update(self):
         self.i += 1
         self.overlay.set_alpha(self.i)
-        pg.time.wait(10)
+        pg.time.wait(10) if self.i < 128 else pg.time.wait(5)
         if self.i > 255:
             pg.time.wait(1000)
-            Scene_Stack.pop_scene()
+            self.cont()
 
     def draw(self, screen):
         screen.fill(settings.COLOUR)
         screen.blit(self.overlay, (0, 0))
-
-
