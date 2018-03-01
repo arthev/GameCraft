@@ -1,14 +1,3 @@
-class High_Score_View(Overlay_Scene):
-    def draw(self):
-        screen.fill(BLACK)
-        fifth = SCREEN_SIZE[1]//5
-        for i in high_scores:
-            name = high_scores[i]["name"]
-            if name == None: name = ""
-            score = high_scores[i]["score"]
-            text = gfont.render("{:6} : {}".format(score, name), False, COLOUR).convert_alpha()
-            screen.blit(text, (SCREEN_SIZE[0]//6, (int(i)-1)*fifth + fifth//3))
-
 class Set_Key(Overlay_Scene):
     def cont(self, key):
         globals()[self.specified["var"]] = key
@@ -31,16 +20,6 @@ class Set_Key(Overlay_Scene):
             elif event.type == pygame.KEYDOWN:
                 if event.key != pause_button and event.key != pygame.K_RETURN:
                     self.cont(event.key)
-
-class Game_Won(Game_Over):
-    def draw(self):
-        Overlay_Scene.draw(self)
-        text = gfont.render("You won!", False, COLOUR)
-        screen.blit(text, (HW - text.get_width()//2,
-                           HH - text.get_height()//2))
-        text = gfont.render("CONGRATULATIONS!", False, COLOUR)
-        screen.blit(text, (HW - text.get_width()//2,
-                           HH + text.get_height()//2))
 
 class Splash_Screen(Overlay_Scene):
     def __init__(self):
