@@ -80,7 +80,7 @@ class Menu_Scene(Scene):
         bb_sur = self.get_base_surface(self.options[self.get_select_down(self.get_select_down())])
         bb_sur = pygame.transform.smoothscale(bb_sur, (round(bb_sur.get_width()*MENU_DWINDLE*MENU_DWINDLE),
                                                       round(bb_sur.get_height()*MENU_DWINDLE*MENU_DWINDLE)))
-        screen.blit(aa_sur, (HW - aa_sur.get_width()//2,
+        screen.blit(bb_sur, (HW - bb_sur.get_width()//2,
                              HH + b_sur.get_height() * 2 + bb_sur.get_height()))
 
    
