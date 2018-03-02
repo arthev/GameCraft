@@ -7,6 +7,7 @@ from .City import City
 from .Bomb import Bomb
 from .Aim import Aim
 from .Game_Over import Game_Over
+from .Board_Cleared import Board_Cleared
 from ..Pause import Pause
 from ..._Scene import _Scene
 from ...Scene_Stack import Scene_Stack
@@ -114,8 +115,10 @@ class Game_Scene(_Scene):
             #game over
             Scene_Stack.change_scene(Game_Over(self.bases, self.bombs, self.score))
         if not self.to_bomb and not self.bombs and not self.explosions:
-            Scene_Stack.change_scene(self.__class__(self.score, self.wave + 1, self.cities))
-            #TODO
+            newscore = self.score + self.get_multiplier() * (100 * len(self.cities) + sum([base.missiles for base in self.bases]) * 5)
+            Scene_Stack.change_scene(self.__class__(newscore, self.wave + 1, self.cities))
+            Scene_Stack.add_scene(Board_Cleared(newscore - self.score, self.cities, self.bases))
+ 
 
 
 

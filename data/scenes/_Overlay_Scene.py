@@ -23,3 +23,5 @@ class _Overlay_Scene(_Scene):
         if event.type == pg.KEYDOWN:
             if event.key == settings.pause_button or event.key == pg.K_RETURN:
                 self.cont()
+        elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            self.cont()

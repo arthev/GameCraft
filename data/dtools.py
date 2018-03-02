@@ -5,6 +5,7 @@ from .scenes.game.Vector2 import Vector2
 
 SZ = constants.SCREEN_SIZE
 BLACK = constants.BLACK
+PUREBLACK = constants.PUREBLACK
 
 standard_font = pg.font.SysFont("Mono", constants.SCREEN_SIZE[0]//20, bold=True)
 
@@ -75,7 +76,34 @@ def draw_missile_num(surface, pos, num):
     surface.blit(t_sur, (pos[0] - t_sur.get_width()//2,
         SZ[1] - t_sur.get_height()*0.8//1))
 
+def create_missile_surface():
+    MW = SZ[0]//80
+    MH = SZ[0]//80
+    i = MW//8 #Results in 1 pixel if (640, 480)
+    ms = pg.Surface( (MW, MH) )
+    ms.set_colorkey(PUREBLACK)
+    PB = PUREBLACK
+    ms.fill(settings.COLOUR)
+    pg.draw.line(ms, BLACK, (1*i, 6*i), (2*i, 6*i))
+    pg.draw.line(ms, BLACK, (5*i, 6*i), (6*i, 6*i))
+    pg.draw.line(ms, BLACK, (2*i, 5*i), (5*i, 5*i))
+    pg.draw.line(ms, BLACK, (3*i, 4*i), (3*i, 1*i))
+    pg.draw.line(ms, BLACK, (4*i, 4*i), (4*i, 1*i))
 
+    pg.draw.line(ms, PB, (0*i, 0*i), (0*i, 5*i))
+    pg.draw.line(ms, PB, (0*i, 7*i), (0*i, 7*i))
+    pg.draw.line(ms, PB, (1*i, 0*i), (1*i, 4*i))
+    pg.draw.line(ms, PB, (2*i, 0*i), (2*i, 0*i))
+    pg.draw.line(ms, PB, (5*i, 0*i), (5*i, 0*i))
+    pg.draw.line(ms, PB, (6*i, 0*i), (6*i, 4*i))
+    pg.draw.line(ms, PB, (7*i, 7*i), (7*i, 7*i))
+    pg.draw.line(ms, PB, (7*i, 0*i), (7*i, 5*i))
+    pg.draw.line(ms, PB, (3*i, 7*i), (4*i, 7*i))
+
+    return ms.convert()
+missile_surface = create_missile_surface()
+def draw_missile(surface, pos):
+    surface.blit(missile_surface, pos)
 
 
 
@@ -91,10 +119,6 @@ def create_city_surface():
     draw_block((0, H//10, W//6, H))
     draw_block((W//6, H//3, W//6+W//4, H))
     draw_block((W//6+W//4, H//5, W//6+W//4+W//5, H))
-
-
-
-
     return cs.convert()
 city_surface = create_city_surface()
 def draw_city(surface, pos):

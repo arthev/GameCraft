@@ -4,6 +4,8 @@ from .Settings_Menu import Settings_Menu
 from .game.Game_Scene import Game_Scene
 from ..Scene_Stack import Scene_Stack
 
+from .. import dtools
+
 def ef(): pass
 
 class Main_Menu(_Menu_Scene):
@@ -19,3 +21,8 @@ class Main_Menu(_Menu_Scene):
                    {"text":"Settings", "func": self.goto_settings},
                    {"text":"Exit", "func": self.goto_exit}]
         super().__init__(options)
+
+
+    def draw(self, screen):
+        super().draw(screen)
+        dtools.draw_missile(screen, (200, 100))
