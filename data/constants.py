@@ -25,3 +25,4 @@ FPS = 60.0
 #paths
 _dir_path = os.path.dirname(os.path.realpath(__file__))
 HIGHSCORE_PATH = os.path.join(_dir_path, "save_data", "scores.txt")
+SETTINGS_PATH = os.path.join(_dir_path, "save_data", "config.cfg")

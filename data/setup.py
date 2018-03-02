@@ -23,4 +23,13 @@ def load_highscores():
         load_highscores()
 load_highscores()
 
+def load_settings():
+    try:
+        with open(str(constants.SETTINGS_PATH), 'r') as settings_file:
+            the_settings = json.load(settings_file)
+            for k, v in the_settings.items():
+                exec("settings.{var} = {val}".format(var=k, val=v))
+    except FileNotFoundError:
+        pass #Use sane defaults
+load_settings()
 

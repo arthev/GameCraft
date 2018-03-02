@@ -1,1 +1,1 @@
-{"3": {"score": 4175, "name": "Arthur"}, "1": {"score": 15050, "name": "Arthur"}, "5": {"name": "Arthur", "score": 700}, "2": {"score": 12405, "name": "Arthur"}, "4": {"score": 1350, "name": "Arthur"}}
+{"5": {"name": "Arthur", "score": 1350}, "1": {"name": "Arthur", "score": 15050}, "2": {"name": "Arthur", "score": 12405}, "3": {"name": "Arthur", "score": 4175}, "4": {"name": "Arthurio", "score": 2190}}

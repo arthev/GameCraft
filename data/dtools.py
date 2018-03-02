@@ -14,7 +14,7 @@ def text(msg):
     return standard_font.render(str(msg), False, settings.COLOUR).convert_alpha()
 
 
-def arrow_surface(self, msg):
+def arrow_surface(msg):
     """Returns a surface of a text msg with <> to the left"""
     t_sur = text(msg)
 
@@ -23,9 +23,9 @@ def arrow_surface(self, msg):
     arrows = pg.Surface( (h, h) )
     arrows.fill(BLACK)
 
-    pg.draw.polygon(arrows, COLOUR,
+    pg.draw.polygon(arrows, settings.COLOUR,
             ( (0, h//2), (h//2 - h//8, h//4), (h//2 - h//8, 3*h//4) ) )
-    pg.draw.polygon(arrows, COLOUR,
+    pg.draw.polygon(arrows, settings.COLOUR,
             ( (h, h//2), (h//2 + h//8, h//4), (h//2 + h//8, 3*h//4) ) )
 
     c_sur = pg.Surface((t_sur.get_width() + arrows.get_width() + h//4,
