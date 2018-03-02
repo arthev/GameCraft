@@ -1,55 +1,40 @@
-class Set_Key(Overlay_Scene):
-    def cont(self, key):
-        globals()[self.specified["var"]] = key
-        pop_scene()
+import pygame as pg
+import random
+from ._Overlay_Scene import _Overlay_Scene
+from .. import constants
+from .. import settings
 
-    def __init__(self, specified):
-        self.specified = specified
-        Overlay_Scene.__init__(self)
+BLACK = constants.BLACK
+COLOUR = settings.COLOUR
+SCREEN_SIZE = constants.SCREEN_SIZE
+HW = constants.HW
+HH = constants.HH
 
-    def draw(self):
-        Overlay_Scene.draw(self)
-        text = gfont.render("Press desired key...", False, COLOUR).convert_alpha()
-        screen.blit(text, (HW - text.get_width()//2,
-                           HH- text.get_height()//2))
-
-    def update(self):
-        for event in pygame.event.get():
-            if event.type == pygame.constants.QUIT:
-                exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key != pause_button and event.key != pygame.K_RETURN:
-                    self.cont(event.key)
-
-class Splash_Screen(Overlay_Scene):
+class Splash_Screen(_Overlay_Scene):
     def __init__(self):
-        self.i = 0
-        self.j = 0
-        display_font = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//12, bold=True)
-        self.display_text = display_font.render("BreakoutyBreakout", False, COLOUR, BLACK).convert()
-        display_font2 = pygame.font.SysFont("Mono", SCREEN_SIZE[0]//18, bold=True)
+        display_font = pg.font.SysFont("Mono", SCREEN_SIZE[0]//14, bold=True)
+        self.display_text = display_font.render("MissilyMissileCommand", False, COLOUR, BLACK).convert()
+        display_font2 = pg.font.SysFont("Mono", SCREEN_SIZE[0]//18, bold=True)
         self.display_text2 = display_font2.render("by: Arthur", False, COLOUR, BLACK).convert()
-        self.display_text.set_alpha(0)
-        self.display_text2.set_alpha(0)
+        self.lines = [i for i in range(SCREEN_SIZE[0])]
+        random.shuffle(self.lines)
 
     def update(self):
-        Overlay_Scene.update(self)
-        if self.i < 256:
-            self.i += 1
-            self.display_text.set_alpha(self.i)
-            pygame.time.wait(10)
-        elif self.j < 256:
-            self.j += 1
-            self.display_text2.set_alpha(self.i)
-            pygame.time.wait(5)
-        else:
-            pygame.time.wait(250)
+        try:
+            self.lines.pop()
+            while random.random() < 0.25:
+                self.lines.pop()
+            pg.time.wait(8)
+        except IndexError:
+            pg.time.wait(1200)
             self.cont()
 
-    def draw(self):
+    def draw(self, screen):
         screen.fill(BLACK)
         screen.blit(self.display_text, 
                 (HW - self.display_text.get_width()//2,
                  HH - self.display_text.get_height()))
         screen.blit(self.display_text2,
                 (HW, HH))
+        for line in self.lines:
+            pg.draw.line(screen, BLACK, (line, 0), (line, SCREEN_SIZE[1]))

@@ -7,12 +7,12 @@ class Scene_Stack(object):
     def add_scene(cls, scene):
         assert isinstance(scene, _Scene), "add_scene: {} is of class {} which inherits not from {}".format(scene, scene.__class__, _Scene)
         cls.the_stack.append(scene)
-        print(cls.the_stack)
+        #print(cls.the_stack)
 
     @classmethod
     def pop_scene(cls):
         cls.the_stack.pop()
-        print(cls.the_stack)
+        #print(cls.the_stack)
 
     @classmethod
     def change_scene(cls, scene):

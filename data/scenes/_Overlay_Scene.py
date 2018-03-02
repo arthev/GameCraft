@@ -24,4 +24,5 @@ class _Overlay_Scene(_Scene):
             if event.key == settings.pause_button or event.key == settings.select_button:
                 self.cont()
         elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            self.cont()
+            pass
+#            self.cont()

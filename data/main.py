@@ -3,12 +3,15 @@ from . import setup
 from . import constants
 from .Scene_Stack import Scene_Stack
 from .scenes.Main_Menu import Main_Menu
+from .scenes.Splash_Screen import Splash_Screen
 
 TIME_PER_UPDATE = 1000.0/constants.FPS
 
 def main(): 
     Scene_Stack.add_scene(Main_Menu())
+    Scene_Stack.add_scene(Splash_Screen())
     driver = Driver()
+    pg.time.wait(1000)
     driver.main()
 
 

@@ -3,6 +3,7 @@ import json
 from ._Menu_Scene import _Menu_Scene
 from .Set_Key import Set_Key
 from .game import Game_Scene
+from .game import Game_Over
 from .. import constants
 from .. import dtools
 from .. import settings
@@ -33,6 +34,7 @@ class Settings_Menu(_Menu_Scene):
         dtools.missile_surface = dtools.create_missile_surface()
         dtools.city_surface = dtools.create_city_surface()
         Game_Scene.game_background = dtools.create_game_background()
+        Game_Over.game_background = dtools.create_game_background()
 
 
         Scene_Stack.pop_scene()
