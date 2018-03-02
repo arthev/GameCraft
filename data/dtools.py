@@ -107,13 +107,12 @@ def draw_missile(surface, pos):
 
 
 
-def create_city_surface():
-    W = SZ[0]//20
-    H = SZ[1]//20
+def create_city_surface(W = SZ[0]//20, H = SZ[1]//20):
     cs = pg.Surface( (W, H) )
     def draw_block(coords):
         pg.draw.rect(cs, BLACK, coords)
         pg.draw.rect(cs, settings.COLOUR, coords, 1)
+        pg.draw.line(cs, settings.COLOUR, (0, coords[3]-1), (cs.get_width(), coords[3]-1))
     cs.fill(constants.PUREBLACK)
     cs.set_colorkey(constants.PUREBLACK)
     draw_block((0, H//10, W//6, H))

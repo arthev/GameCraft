@@ -25,4 +25,3 @@ class Main_Menu(_Menu_Scene):
 
     def draw(self, screen):
         super().draw(screen)
-        dtools.draw_missile(screen, (200, 100))

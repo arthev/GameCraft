@@ -117,7 +117,7 @@ class Game_Scene(_Scene):
         if not self.to_bomb and not self.bombs and not self.explosions:
             newscore = self.score + self.get_multiplier() * (100 * len(self.cities) + sum([base.missiles for base in self.bases]) * 5)
             Scene_Stack.change_scene(self.__class__(newscore, self.wave + 1, self.cities))
-            Scene_Stack.add_scene(Board_Cleared(newscore - self.score, self.cities, self.bases))
+            Scene_Stack.add_scene(Board_Cleared(newscore - self.score, self.cities, self.bases, self.get_multiplier()))
  
 
 
