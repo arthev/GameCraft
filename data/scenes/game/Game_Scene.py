@@ -55,6 +55,7 @@ class Game_Scene(_Scene):
         self.missiles = []
         self.explosions = []
         self.bases = [Base(pos) for pos in BASE_COORDS]
+        self.bases[1].speed *= 2
         self.cities = cities
         self.bombs = []
         self.score = score
@@ -65,16 +66,25 @@ class Game_Scene(_Scene):
 
 
     def handle_event(self, event):
+        def shoot_from_base(base):
+            missile = base.shoot_missile(Aim.get_pos())
+            if missile: self.missiles.append(missile)
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             active_bases = [base for base in self.bases if base.missiles > 0]
             bases = {base: base.get_distance(Aim.get_pos()) for base in active_bases}
             try:
-                missile = min(bases, key=bases.get).shoot_missile(Aim.get_pos())
-                self.missiles.append(missile)
-            except ValueError:
+                shoot_from_base( min(bases, key=bases.get) )
+            except ValueError: #What if there are no active bases?
                 pass
-        elif event.type == pg.KEYDOWN and event.key == settings.pause_button:
-            Scene_Stack.add_scene(Pause())
+        elif event.type == pg.KEYDOWN: 
+            if event.key == settings.pause_button:
+                Scene_Stack.add_scene(Pause())
+            elif event.key == settings.left_button:
+                shoot_from_base(self.bases[0])
+            elif event.key == settings.up_button:
+                shoot_from_base(self.bases[1])
+            elif event.key == settings.right_button:
+                shoot_from_base(self.bases[2])
 
     def update(self, time_passed):
         self.delay -= time_passed
@@ -102,7 +112,10 @@ class Game_Scene(_Scene):
                 bomb = self.bombs.pop(i)
                 self.explosions.append(Explosion(bomb.get_coords()))
                 if bomb.destroyer:
-                    try: self.bases.remove(bomb.get_target())
+                    try: 
+                        bomb.get_target().missiles = 0
+                        bomb.get_target().done = True
+#                        self.bases.remove(bomb.get_target())
                     except ValueError: pass
                     try: self.cities.remove(bomb.get_target())
                     except ValueError: pass
