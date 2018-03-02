@@ -1,6 +1,7 @@
 import pygame as pg
 import random
 from .Bomb import Bomb
+from .Explosion import Explosion
 from .Vector2 import Vector2
 from ..Highscore_Entry import Highscore_Entry
 from ..._Scene import _Scene
@@ -29,13 +30,15 @@ class Game_Over(_Scene):
         ol.set_alpha(0)
         return ol
 
-    def __init__(self, hubs, bombs, score):
+    def __init__(self, hubs, bombs, score, explosions, missiles):
         self.score = score
         self.hubs = hubs + [Mock(random.randint(-200, constants.SCREEN_SIZE[0] + 200), constants.SCREEN_SIZE[1]) for i in range(100)]
         self.bombs = bombs
         self.i = 0
         self.overlay = self.create_overlay()
         self.delay = 15000
+        self.explosions = explosions
+        self.missiles = missiles
 
     def update(self, time_passed):
         self.delay -= time_passed
@@ -57,7 +60,20 @@ class Game_Over(_Scene):
         if self.i == 255:
             pg.time.wait(2000)
             self.cont()
-        for bomb in self.bombs: bomb.update([])
+        for bomb in self.bombs: bomb.update(self.explosions)
+        for explosion in self.explosions: explosion.update()
+        for missile in self.missiles: missile.update()
+        for i in range(len(self.missiles) - 1, -1, -1):
+            if self.missiles[i].done:
+                missile = self.missiles.pop(i)
+                self.explosions.append(Explosion(missile.get_coords()))
+        for i in range(len(self.explosions) - 1, -1, -1):
+            if self.explosions[i].done:
+                self.explosions.pop(i)
+        for i in range(len(self.bombs) -1, -1, -1):
+            if self.bombs[i].done:
+                bomb = self.bombs.pop(i)
+                self.explosions.append(Explosion(bomb.get_coords()))
 
     def handle_event(self, event):
         if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
@@ -74,6 +90,8 @@ class Game_Over(_Scene):
         for bomb in self.bombs:
             bomb.done = False
             bomb.draw(screen)
+        for explosion in self.explosions: explosion.draw(screen)
+        for missile in self.missiles: missile.draw(screen)
         
         screen.blit(self.overlay, (0, 0))
 

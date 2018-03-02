@@ -113,7 +113,7 @@ class Game_Scene(_Scene):
 #        active_bases = [base for base in self.bases if base.missiles > 0]
         if not self.cities:
             #game over
-            Scene_Stack.change_scene(Game_Over(self.bases, self.bombs, self.score))
+            Scene_Stack.change_scene(Game_Over(self.bases, self.bombs, self.score, self.explosions, self.missiles))
         if not self.to_bomb and not self.bombs and not self.explosions:
             newscore = self.score + self.get_multiplier() * (100 * len(self.cities) + sum([base.missiles for base in self.bases]) * 5)
             Scene_Stack.change_scene(self.__class__(newscore, self.wave + 1, self.cities))
