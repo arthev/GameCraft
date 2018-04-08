@@ -1,27 +1,22 @@
-import os
+#import os
 import sys
 import pygame as pg
 import json
-from enum import Enum
 from tkinter import Tk, filedialog, simpledialog
 
 def quit(): pg.quit(); sys.exit()
 
 SCREEN_SIZE = (800, 800)
-HW = SCREEN_SIZE[0]//2 #??
-HH = SCREEN_SIZE[1]//2 #??
 FPS = 60
-
 VOFFSET = 64 #This is in pixels directly
 HOFFSET = 64 #Same
-
 BLACK = (0, 0, 0)
 COLOUR = AMBER = (255, 176, 0)
 LGRAY = (180, 180, 180) #For use as transparent
-DGRAY = (120, 120, 120)
+DGRAY = (120, 120, 120) #Same
 
 #Here comes the file handlers
-def pmp(fn): #fn -> filename
+def pmp(fn) -> bool: #fn -> filename
     fn = fn.name
     return ".pmp" == fn[fn.rfind("."):]
 
@@ -33,7 +28,7 @@ def open_file():
     if fn and pmp(fn):
         with open(fn.name, 'r') as f:
             global pmap
-            pmap = {} #Let's reset to avoid mismatch on sizes
+            pmap = {} #Reset to avoid mismatch on sizes
             jmap = json.load(f)
             for i in jmap:
                 pmap[int(i)] = jmap[i]
@@ -55,8 +50,6 @@ def save_file():
     root.update()
     root.destroy()
 
-#def export_file(): pass, simple stuff for say .png or .bmp.
-
 def new_pmap():
     global pmap
     root = Tk()
@@ -75,10 +68,7 @@ def set_pixel(x, y):
     except KeyError:
         pass
 
-
-
 class Button(object):
-    #draw functions
     def create_buttony_surface(self, msg):
         f_tex = gfont.render(msg, False, COLOUR)
         bg_sur = pg.Surface( (HOFFSET, VOFFSET) )
@@ -104,7 +94,6 @@ screen = pg.display.set_mode(SCREEN_SIZE)
 gfont = pg.font.SysFont("Mono", 32, bold=True)
 clock = pg.time.Clock()
 
-
 save_button = Button("S", save_file, HOFFSET, 0)
 load_button = Button("L", open_file, save_button.x + save_button.w, 0)
 new_button = Button("N", new_pmap, load_button.x + load_button.w, 0)
@@ -117,8 +106,6 @@ press_key = False
 while True:
     clock.tick(FPS)
 
-#    print("Press_key, current_substance", (press_key, current_substance))
-
     pw = (SCREEN_SIZE[0] - 2*HOFFSET)//len(pmap)
     ph = (SCREEN_SIZE[1] - 2*VOFFSET)//len(pmap[0])
 
@@ -128,9 +115,6 @@ while True:
     x = int((mx-HOFFSET)//pw)
     y = int((my-VOFFSET)//ph)
    
-#    print("pos:", (x, y))
-#    print("current_substance:", current_substance)
-
     #Handle_Event
     for event in pg.event.get():
         if event.type == pg.constants.QUIT:
@@ -159,15 +143,12 @@ while True:
                 if mx > button.x and mx < button.x + button.w and my > button.y and my < button.y + button.h:
                     button.func()
 
-
     #Draw
     screen.fill(BLACK)
-
     pg.draw.line(screen, COLOUR, (0, VOFFSET - 2), (SCREEN_SIZE[0], VOFFSET - 2), 2)
     pg.draw.line(screen, COLOUR, (0, SCREEN_SIZE[1] - VOFFSET), (SCREEN_SIZE[0], SCREEN_SIZE[1] - VOFFSET), 2)
     pg.draw.line(screen, COLOUR, (HOFFSET - 2, 0), (HOFFSET - 2, SCREEN_SIZE[1]), 2)
     pg.draw.line(screen, COLOUR, (SCREEN_SIZE[0] - HOFFSET, 0), (SCREEN_SIZE[0] - HOFFSET, SCREEN_SIZE[1]), 2)
-
 
     def draw_pixel(col):
         x = HOFFSET + i*pw
@@ -186,25 +167,7 @@ while True:
                     draw_pixel(LGRAY)
                 else:
                     draw_pixel(DGRAY)
-#            print("i, j:", (i, j))
-
 
     for button in buttons: button.draw(screen)
 
-
     pg.display.update()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
