@@ -1,1 +1,3 @@
 __pycache__
+breakout/data/config_breakout.cfg
+breakout/data/scores.txt
