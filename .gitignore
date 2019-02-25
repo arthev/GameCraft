@@ -1,3 +1,6 @@
 __pycache__
 breakout/data/config_breakout.cfg
 breakout/data/scores.txt
+missilecommand/data/__pycache__
+missilecommand/data/scenes/__pycache__
+missilecommand/data/scenes/game/__pycache__
