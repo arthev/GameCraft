@@ -1,0 +1,10 @@
+#from: https://superuser.com/questions/361297/what-colour-is-the-dark-green-on-old-fashioned-green-screen-computer-displays
+AMBER = (255, 176, 0)
+LTAMBER = (255, 204, 0)
+GREEN1 = (51, 255, 0)
+APPLE1 = (51, 255, 51)
+GREEN2 = (0, 255, 51)
+APPLE2 = (102, 255, 102)
+GREEN3 = (0, 255, 102)
+PUREBLACK = (0, 0, 0)
+DISPLAYBLACK = (40, 40, 40)
